@@ -315,8 +315,8 @@
       left: 14px;
       transform: translateY(-50%);
       z-index: 20;
-      width: 115px;
-      height: 90px;
+      width: 180px;
+      height: 140px;
     }
 
     .pip-frame {
@@ -630,7 +630,7 @@
   <!-- ═══════════════════════════════════════ -->
   <!--        LEFT: DEMO CONTROL PANEL         -->
   <!-- ═══════════════════════════════════════ -->
-  <div class="demo-panel">
+  <!-- <div class="demo-panel">
     <h2>🎬 Demo Controls</h2>
 
     <button class="demo-btn" id="btn-speaking" onclick="toggleSpeaking()">
@@ -653,15 +653,15 @@
       💡 กดปุ่มอีกครั้งเพื่อปิด<br>การแจ้งเตือน
     </div>
 
-    <!-- Timer demo control -->
-    <button class="demo-btn" onclick="resetTimer()">
+     Timer demo control -->
+    <!-- <button class="demo-btn" onclick="resetTimer()">
       <span class="btn-icon">⏱️</span>
       <div>
         <div>รีเซ็ตตัวจับเวลา</div>
         <div class="btn-label">Reset Call Timer</div>
       </div>
     </button>
-  </div>
+  </div> --> 
 
 
   <!-- ═══════════════════════════════════════ -->
@@ -687,7 +687,7 @@
       <!-- │   TOP 50% — CALLER VIDEO        │ -->
       <!-- └─────────────────────────────────┘ -->
       <div class="video-top" id="video-top">
-
+        <img src="./assets/นายสมชาย.png" />
         <!--
         ╔══════════════════════════════════════════════════════════╗
         ║  🎥 REPLACE THIS — CALLER / REMOTE PARTICIPANT VIDEO     ║
@@ -752,10 +752,8 @@
         ║  ใส่ <video id="localCam" autoplay muted playsinline>    ║
         ╚══════════════════════════════════════════════════════════╝
         -->
-        <video class="vid-placeholder self-placeholder"
-          src=""
-          autoplay muted loop playsinline
-          onerror="this.style.display='none'; document.getElementById('self-placeholder').style.display='flex'">
+        <video id="localCam" autoplay muted playsinline 
+              style="width:100%; height:100%; object-fit:cover; transform: scaleX(-1);">
         </video>
 
         <!-- Fallback self-view placeholder -->
@@ -824,9 +822,9 @@
       <!-- └─────────────────────────────────┘ -->
       <div class="subtitle-bar">
         <div class="subtitle-inner">
-          <div class="subtitle-from">คู่สนทนา</div>
+          <div class="subtitle-from"></div>
           <div class="subtitle-text" id="subtitle-text">
-            สวัสดีครับ <span class="highlight">วันนี้มีนัดเวลา 10 โมง</span> ใช่ไหมครับ?
+             <span class="highlight"></span> 
           </div>
         </div>
       </div>
@@ -839,7 +837,7 @@
   <!-- ═══════════════════════════════════════ -->
   <!--       RIGHT: INFO / LEGEND PANEL        -->
   <!-- ═══════════════════════════════════════ -->
-  <div class="info-panel">
+  <!-- <div class="info-panel">
     <h2>📋 UI Elements</h2>
 
     <div class="info-card">
@@ -878,7 +876,19 @@
         to find all 3 video slots
       </div>
     </div>
-  </div>
+  </div> -->
+
+  <div class="info-card" style="border-color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0,212,255,0.2);">
+      <div class="card-title" style="color: var(--accent-cyan);">📨 แบบจำลองรับข้อความ</div>
+      <div class="card-body" style="display: flex; flex-direction: column; gap: 8px; margin-top: 5px;">
+        <input type="text" id="demo-incoming-input" placeholder="เช่น อาจารย์หล่อมาก..." 
+               style="width: 100%; padding: 8px; border-radius: 6px; background: rgba(0,0,0,0.6); color: white; border: 1px solid var(--glass-border); font-size: 11px; outline: none;">
+        <button onclick="triggerIncomingMessage()" 
+                style="background: var(--accent-cyan); color: #000; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.2s;">
+          ▶ โชว์วิดีโอล่าม TSL
+        </button>
+      </div>
+    </div>
 
 
   <!-- ═══════════════════════════════════════ -->
@@ -992,6 +1002,127 @@
     updateClock();
     setInterval(updateClock, 10000);
     startTimer();
+
+    // ตัวแปรสำหรับกล้อง
+const localVideo = document.getElementById('localCam');
+const captureCanvas = document.createElement('canvas');
+const ctx = captureCanvas.getContext('2d');
+
+// 1. ฟังก์ชันขอเปิดกล้องจริง
+async function startRealCamera() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } } 
+        });
+        localVideo.srcObject = stream;
+        console.log("✅ เปิดกล้องสำเร็จ");
+    } catch (err) {
+        console.error("❌ ไม่สามารถเปิดกล้องได้:", err);
+        alert("กรุณาอนุญาตการเข้าถึงกล้องเพื่อใช้งานระบบ");
+    }
+}
+
+// 2. ฟังก์ชันจับภาพแล้วส่งไปหา FastAPI
+async function captureAndSendFrame() {
+    if (!localVideo.videoWidth) return; // รอกล้องพร้อมก่อน
+
+    // ตั้งขนาด Canvas ให้เท่ากับวิดีโอ
+    captureCanvas.width = localVideo.videoWidth;
+    captureCanvas.height = localVideo.videoHeight;
+    
+    // วาดภาพจากวิดีโอลง Canvas
+    ctx.drawImage(localVideo, 0, 0, captureCanvas.width, captureCanvas.height);
+    
+    // แปลงภาพเป็น Base64 (คุณภาพ 70% เพื่อลด Bandwidth)
+    const base64Image = captureCanvas.toDataURL('image/jpeg', 0.7);
+
+    try {
+        const response = await fetch("http://localhost:8000/api/sign-to-text", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image: base64Image })
+        });
+        
+        const data = await response.json();
+        
+        // ถ้าหลังบ้าน (MediaPipe/Random Forest) ทำนายคำศัพท์ได้ ให้มาอัปเดต Subtitle ทันที
+        if (data.prediction && data.prediction !== "") {
+            document.getElementById('subtitle-text').innerHTML = `<span class="highlight">${data.prediction}</span>`;
+        }
+    } catch (error) {
+        console.error("API Error:", error);
+    }
+}
+
+// 3. เริ่มเปิดกล้องเมื่อโหลดหน้าเว็บเสร็จ
+startRealCamera();
+
+// 4. ตั้งเวลาให้แคปภาพส่งไปหลังบ้านทุกๆ 500 มิลลิวินาที (2 FPS)
+// สามารถปรับตัวเลขให้น้อยลงได้ถ้าระบบคุณรับไหว (เช่น 200 = 5 FPS)
+setInterval(captureAndSendFrame, 500);
+
+
+// ── ระบบจำลอง: รับข้อความและเล่นวิดีโอ PIP ──
+    async function triggerIncomingMessage() {
+      const inputEl = document.getElementById('demo-incoming-input');
+      const text = inputEl.value.trim();
+      if (!text) return;
+
+      // 1. เปลี่ยน Subtitle ทันที
+      document.getElementById('subtitle-text').innerHTML = `<span class="highlight">${text}</span>`;
+      inputEl.value = ''; // เคลียร์ช่องพิมพ์
+
+      // 2. เรียก API แปลข้อความเป็นวิดีโอ
+      try {
+        const response = await fetch("http://localhost:8000/api/text-to-sign", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: text })
+        });
+        const result = await response.json();
+        
+        // 3. นำวิดีโอมาเล่นใน PIP
+        if (result.video_sequence && result.video_sequence.length > 0) {
+            playPipVideoQueue(result.video_sequence);
+        }
+      } catch (err) {
+        console.error("❌ API Error:", err);
+        alert("ไม่สามารถดึงวิดีโอได้ (เช็กให้แน่ใจว่ารัน uvicorn main:app อยู่)");
+      }
+    }
+
+    // ── ระบบคิวเล่นวิดีโอสำหรับ PIP ──
+    function playPipVideoQueue(videoUrls) {
+      // ดึง element ของวิดีโอ PIP (ใน pip-frame)
+      const pipVideo = document.querySelector('.pip-frame video');
+      const pipPlaceholder = document.getElementById('pip-placeholder');
+      
+      pipPlaceholder.style.display = 'none';
+      pipVideo.style.display = 'block';
+      
+      // 📍 สำคัญมาก: ปิดการตั้งค่า Loop ของเบราว์เซอร์ เพื่อให้ onended ทำงานได้
+      pipVideo.loop = false; 
+      
+      let currentIdx = 0;
+      
+      // คำสั่งนี้จะทำงานก็ต่อเมื่อวิดีโอ(ที่ไม่ได้ถูก loop ไว้) เล่นจนจบ
+      pipVideo.onended = function() {
+          currentIdx++;
+          // ถ้ายังมีวิดีโอในคิวเหลืออยู่
+          if (currentIdx < videoUrls.length) {
+              pipVideo.src = "http://localhost:8000" + videoUrls[currentIdx];
+              pipVideo.play();
+          } else {
+              // เล่นจบครบทุกคำแล้ว
+              console.log("✅ เล่นคิววิดีโอ PIP จบประโยคแล้ว");
+              // จะให้ภาพค้างไว้ที่คลิปสุดท้าย หรือกลับไปแสดง placeholder ก็ได้
+          }
+      };
+      
+      // เริ่มโหลดและเล่นคลิปแรกสุด
+      pipVideo.src = "http://localhost:8000" + videoUrls[0];
+      pipVideo.play();
+    }
   </script>
 
 </body>
