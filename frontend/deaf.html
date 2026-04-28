@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SignBridge — Deaf User Screen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg-deep: #0a0c10;
+      --bg-surface: #12151c;
+      --accent-cyan: #00d4ff;
+      --accent-teal: #00b894;
+      --alert-red: #ff4757;
+      --alert-orange: #ff9f43;
+      --glass: rgba(255,255,255,0.06);
+      --glass-border: rgba(255,255,255,0.1);
+      --text-primary: #f0f4ff;
+      --text-muted: #8892a4;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', 'Noto Sans Thai', sans-serif;
+      background: var(--bg-deep);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      padding: 32px 16px;
+      background-image:
+        radial-gradient(ellipse 60% 40% at 20% 30%, rgba(0,180,220,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 60% at 80% 70%, rgba(0,184,148,0.05) 0%, transparent 60%);
+    }
+
+    /* ─── Demo Controls Panel ─── */
+    .demo-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 200px;
+      flex-shrink: 0;
+    }
+
+    .demo-panel h2 {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 10px;
+      margin-bottom: 4px;
+    }
+
+    .demo-btn {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 13px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.45;
+      text-align: left;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .demo-btn:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.2);
+      transform: translateY(-1px);
+    }
+
+    .demo-btn:active { transform: translateY(0); }
+
+    .demo-btn .btn-icon {
+      font-size: 18px;
+      line-height: 1;
+      margin-top: 1px;
+      flex-shrink: 0;
+    }
+
+    .demo-btn .btn-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .demo-btn.active-speaking { border-color: var(--accent-cyan); background: rgba(0,212,255,0.1); }
+    .demo-btn.active-oof { border-color: var(--alert-orange); background: rgba(255,159,67,0.1); }
+
+    .demo-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px dashed rgba(255,255,255,0.08);
+    }
+
+    /* ─── Phone Frame ─── */
+    .phone-wrap {
+      position: relative;
+    }
+
+    .phone-frame {
+      width: 375px;
+      height: 780px;
+      border-radius: 44px;
+      background: #000;
+      border: 3px solid #2a2d35;
+      box-shadow:
+        0 0 0 1px #1a1c22,
+        0 60px 120px rgba(0,0,0,0.8),
+        0 20px 40px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Notch */
+    .phone-notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 126px;
+      height: 34px;
+      background: #000;
+      border-radius: 0 0 20px 20px;
+      z-index: 100;
+    }
+
+    /* Status bar */
+    .status-bar {
+      position: absolute;
+      top: 10px;
+      left: 20px;
+      right: 20px;
+      z-index: 101;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .status-right { display: flex; gap: 5px; align-items: center; }
+
+    /* ─── Video Panels ─── */
+    .video-top, .video-bottom {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .video-top { border-radius: 44px 44px 0 0; }
+    .video-bottom { border-radius: 0 0 44px 44px; }
+
+    .video-top video,
+    .video-top .vid-placeholder,
+    .video-bottom video,
+    .video-bottom .vid-placeholder {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Gradient divider effect */
+    .video-top::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 60px;
+      background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.55));
+      pointer-events: none;
+    }
+
+    .video-bottom::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 60px;
+      background: linear-gradient(to top, transparent, rgba(0,0,0,0.55));
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Caller placeholder */
+    .vid-placeholder {
+      background: linear-gradient(145deg, #1a1e2a 0%, #0e1118 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--text-muted);
+    }
+
+    .vid-placeholder .avatar {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2a3a4a, #1a2535);
+      border: 2px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+    }
+
+    .vid-placeholder span { font-size: 13px; opacity: 0.5; }
+
+    /* Self-view tint */
+    .self-placeholder {
+      background: linear-gradient(145deg, #0f1520 0%, #080c12 100%);
+    }
+
+    /* Caller label */
+    .caller-label {
+      position: absolute;
+      top: 48px;
+      left: 0; right: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .caller-name {
+      font-size: 16px;
+      font-weight: 500;
+      color: #fff;
+      letter-spacing: 0.01em;
+    }
+
+    .call-duration {
+      font-size: 12px;
+      color: rgba(255,255,255,0.55);
+      margin-top: 3px;
+    }
+
+    /* ─── Speaking Indicator ─── */
+    .speaking-indicator {
+      position: absolute;
+      top: 52px;
+      right: 18px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 20px;
+      background: rgba(0,212,255,0.15);
+      border: 1px solid rgba(0,212,255,0.35);
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      transform: scale(0.85);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      pointer-events: none;
+    }
+
+    .speaking-indicator.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .speaking-dots {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+    }
+
+    .speaking-dots span {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      animation: speakBounce 0.9s ease-in-out infinite;
+    }
+
+    .speaking-dots span:nth-child(2) { animation-delay: 0.15s; }
+    .speaking-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes speakBounce {
+      0%, 100% { transform: scaleY(1); opacity: 0.6; }
+      50% { transform: scaleY(1.9); opacity: 1; }
+    }
+
+    .speaking-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent-cyan);
+      white-space: nowrap;
+    }
+
+    /* Glow ring on top video when speaking */
+    .video-top.speaking-active {
+      box-shadow: inset 0 0 0 2.5px rgba(0,212,255,0.5);
+    }
+
+    /* ─── PIP Interpreter Video ─── */
+    .pip-container {
+      position: absolute;
+      /* Centered on the divider line, left-aligned */
+      top: 50%;
+      left: 14px;
+      transform: translateY(-50%);
+      z-index: 20;
+      width: 115px;
+      height: 90px;
+    }
+
+    .pip-frame {
+      width: 100%;
+      height: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 2px solid rgba(0,212,255,0.55);
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.4),
+        0 8px 24px rgba(0,0,0,0.6),
+        0 0 20px rgba(0,212,255,0.15);
+      position: relative;
+    }
+
+    .pip-frame video,
+    .pip-frame .pip-placeholder {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .pip-placeholder {
+      background: linear-gradient(145deg, #0e2030, #0a1520);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .pip-placeholder .pip-icon { font-size: 22px; }
+    .pip-placeholder .pip-text {
+      font-size: 9px;
+      color: var(--accent-cyan);
+      opacity: 0.7;
+      letter-spacing: 0.08em;
+      font-weight: 500;
+    }
+
+    .pip-badge {
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,184,148,0.9);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 10px;
+      white-space: nowrap;
+      letter-spacing: 0.05em;
+    }
+
+    /* ─── Self-view Label ─── */
+    .self-label {
+      position: absolute;
+      bottom: 80px;
+      right: 14px;
+      z-index: 5;
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      font-weight: 400;
+      pointer-events: none;
+    }
+
+    /* ─── Out of Frame Alert ─── */
+    .oof-alert {
+      position: absolute;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      pointer-events: none;
+    }
+
+    .oof-alert.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .oof-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 16px;
+      background: rgba(255, 90, 60, 0.18);
+      border: 1.5px solid rgba(255, 90, 60, 0.5);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(255,60,30,0.2);
+    }
+
+    .oof-icon-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .oof-icon { font-size: 22px; line-height: 1; }
+
+    .oof-x {
+      position: absolute;
+      top: -3px; right: -4px;
+      width: 12px; height: 12px;
+      background: var(--alert-red);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 8px;
+      color: #fff;
+      font-weight: 700;
+      line-height: 1;
+      animation: pulseX 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulseX {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+
+    .oof-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .oof-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #ffb3a0;
+    }
+
+    .oof-sub {
+      font-size: 10px;
+      color: rgba(255,180,160,0.65);
+    }
+
+    /* ─── Subtitle Bar ─── */
+    .subtitle-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0; right: 0;
+      z-index: 25;
+      padding: 0 14px 10px;
+      pointer-events: none;
+    }
+
+    .subtitle-inner {
+      background: rgba(10,12,18,0.78);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .subtitle-from {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--accent-cyan);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .subtitle-text {
+      font-size: 14px;
+      font-weight: 400;
+      color: #f0f4ff;
+      line-height: 1.5;
+      font-family: 'Noto Sans Thai', 'DM Sans', sans-serif;
+    }
+
+    .subtitle-text .highlight {
+      color: var(--accent-cyan);
+      font-weight: 500;
+    }
+
+    /* ─── End Call Button ─── */
+    .endcall-btn {
+      position: absolute;
+      bottom: 72px;
+      right: 18px;
+      z-index: 30;
+      width: 50px; height: 50px;
+      border-radius: 50%;
+      background: var(--alert-red);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow:
+        0 4px 16px rgba(255,71,87,0.5),
+        0 0 0 0 rgba(255,71,87,0.3);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      animation: endcallPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes endcallPulse {
+      0%, 100% { box-shadow: 0 4px 16px rgba(255,71,87,0.5), 0 0 0 0 rgba(255,71,87,0); }
+      50% { box-shadow: 0 4px 24px rgba(255,71,87,0.6), 0 0 0 8px rgba(255,71,87,0); }
+    }
+
+    .endcall-btn:hover { transform: scale(1.08); }
+    .endcall-btn:active { transform: scale(0.95); }
+
+    /* ─── Timer overlay ─── */
+    .timer-chip {
+      position: absolute;
+      top: 48px;
+      left: 14px;
+      z-index: 6;
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(6px);
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.05em;
+    }
+
+    /* ─── Info Panel (right side) ─── */
+    .info-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 190px;
+      flex-shrink: 0;
+    }
+
+    .info-panel h2 {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 10px;
+      margin-bottom: 4px;
+    }
+
+    .info-card {
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass);
+      backdrop-filter: blur(8px);
+    }
+
+    .info-card .card-title {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .info-card .card-body {
+      font-size: 12px;
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      margin: 2px 2px 0 0;
+    }
+
+    .tag-cyan { background: rgba(0,212,255,0.15); color: var(--accent-cyan); }
+    .tag-green { background: rgba(0,184,148,0.15); color: var(--accent-teal); }
+    .tag-red { background: rgba(255,71,87,0.15); color: var(--alert-red); }
+
+    /* ─── Phone divider line ─── */
+    .divider-line {
+      position: absolute;
+      top: 50%;
+      left: 0; right: 0;
+      height: 1px;
+      background: rgba(255,255,255,0.08);
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      body { flex-direction: column; align-items: center; }
+      .demo-panel, .info-panel { flex-direction: row; flex-wrap: wrap; width: 375px; }
+      .demo-panel h2, .info-panel h2 { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!--        LEFT: DEMO CONTROL PANEL         -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="demo-panel">
+    <h2>🎬 Demo Controls</h2>
+
+    <button class="demo-btn" id="btn-speaking" onclick="toggleSpeaking()">
+      <span class="btn-icon">🔊</span>
+      <div>
+        <div>จำลองคู่สนทนา<br>กำลังพูด</div>
+        <div class="btn-label">Simulate Speaking</div>
+      </div>
+    </button>
+
+    <button class="demo-btn" id="btn-oof" onclick="toggleOOF()">
+      <span class="btn-icon">🤚</span>
+      <div>
+        <div>จำลองมือ<br>หลุดเฟรม</div>
+        <div class="btn-label">Out of Frame Alert</div>
+      </div>
+    </button>
+
+    <div class="demo-hint">
+      💡 กดปุ่มอีกครั้งเพื่อปิด<br>การแจ้งเตือน
+    </div>
+
+    <!-- Timer demo control -->
+    <button class="demo-btn" onclick="resetTimer()">
+      <span class="btn-icon">⏱️</span>
+      <div>
+        <div>รีเซ็ตตัวจับเวลา</div>
+        <div class="btn-label">Reset Call Timer</div>
+      </div>
+    </button>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════ -->
+  <!--          CENTER: PHONE MOCKUP           -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="phone-wrap">
+    <div class="phone-frame" id="phone">
+
+      <!-- Notch -->
+      <div class="phone-notch"></div>
+
+      <!-- Status bar -->
+      <div class="status-bar">
+        <span id="status-time">9:41</span>
+        <div class="status-right">
+          <span>●●●</span>
+          <span>WiFi</span>
+          <span>🔋</span>
+        </div>
+      </div>
+
+      <!-- ┌─────────────────────────────────┐ -->
+      <!-- │   TOP 50% — CALLER VIDEO        │ -->
+      <!-- └─────────────────────────────────┘ -->
+      <div class="video-top" id="video-top">
+
+        <!--
+        ╔══════════════════════════════════════════════════════════╗
+        ║  🎥 REPLACE THIS — CALLER / REMOTE PARTICIPANT VIDEO     ║
+        ║  ภาพวิดีโอของคู่สนทนา (คนหูดี) ที่โทรมา                ║
+        ║                                                          ║
+        ║  Option 1: Video                                         ║
+        ║  <video src="YOUR_CALLER_VIDEO.mp4"                      ║
+        ║    autoplay muted loop playsinline></video>              ║
+        ║                                                          ║
+        ║  Option 2: Image placeholder                             ║
+        ║  <img src="YOUR_CALLER_PHOTO.jpg" />                     ║
+        ╚══════════════════════════════════════════════════════════╝
+        -->
+        <video class="vid-placeholder"
+          src=""
+          autoplay muted loop playsinline
+          onerror="this.style.display='none'; document.getElementById('caller-placeholder').style.display='flex'">
+        </video>
+
+        <!-- Fallback placeholder (shows when no video src) -->
+        <div class="vid-placeholder" id="caller-placeholder" style="display:flex; height:100%;">
+          <div class="avatar">👤</div>
+          <span>Caller Video Feed</span>
+        </div>
+
+        <!-- Caller Info Overlay -->
+        <div class="caller-label">
+          <div class="caller-name">สมชาย ใจดี</div>
+          <div class="call-duration" id="call-timer">00:00</div>
+        </div>
+
+        <!-- Speaking Indicator -->
+        <div class="speaking-indicator" id="speaking-indicator">
+          <div class="speaking-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="speaking-label">กำลังพูด</span>
+        </div>
+
+      </div>
+      <!-- END TOP VIDEO -->
+
+      <!-- Divider line at 50% -->
+      <div class="divider-line"></div>
+
+      <!-- ┌─────────────────────────────────┐ -->
+      <!-- │  BOTTOM 50% — SELF VIEW (Deaf)  │ -->
+      <!-- └─────────────────────────────────┘ -->
+      <div class="video-bottom" id="video-bottom">
+
+        <!--
+        ╔══════════════════════════════════════════════════════════╗
+        ║  🎥 REPLACE THIS — SELF-VIEW / LOCAL CAMERA FEED         ║
+        ║  กล้องหน้าของผู้ใช้ (ผู้บกพร่องทางการได้ยิน)             ║
+        ║  สำหรับแสดงภาษามือใส่กล้อง                               ║
+        ║                                                          ║
+        ║  Option 1: Video                                         ║
+        ║  <video src="YOUR_SELFVIEW_VIDEO.mp4"                    ║
+        ║    autoplay muted loop playsinline></video>              ║
+        ║                                                          ║
+        ║  Option 2: Live camera via getUserMedia (production)     ║
+        ║  ใส่ <video id="localCam" autoplay muted playsinline>    ║
+        ╚══════════════════════════════════════════════════════════╝
+        -->
+        <video class="vid-placeholder self-placeholder"
+          src=""
+          autoplay muted loop playsinline
+          onerror="this.style.display='none'; document.getElementById('self-placeholder').style.display='flex'">
+        </video>
+
+        <!-- Fallback self-view placeholder -->
+        <div class="vid-placeholder self-placeholder" id="self-placeholder" style="display:flex; height:100%;">
+          <div class="avatar" style="font-size:20px;">🤟</div>
+          <span>Self View (Sign Language)</span>
+        </div>
+
+        <div class="self-label">คุณ</div>
+
+        <!-- Out of Frame Alert -->
+        <div class="oof-alert" id="oof-alert">
+          <div class="oof-card">
+            <div class="oof-icon-wrap">
+              <span class="oof-icon">🤚</span>
+              <div class="oof-x">✕</div>
+            </div>
+            <div class="oof-text">
+              <div class="oof-title">มือหลุดเฟรม</div>
+              <div class="oof-sub">กรุณาขยับมือเข้ากล้อง</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- End Call Button -->
+        <button class="endcall-btn" onclick="endCall()" title="วางสาย">
+          📵
+        </button>
+
+      </div>
+      <!-- END BOTTOM VIDEO -->
+
+      <!-- ┌─────────────────────────────────┐ -->
+      <!-- │  PIP — INTERPRETER VIDEO        │ -->
+      <!-- └─────────────────────────────────┘ -->
+      <div class="pip-container">
+        <div class="pip-frame">
+          <!--
+          ╔══════════════════════════════════════════════════════════╗
+          ║  🎥 REPLACE THIS — INTERPRETER / TSL TRANSLATOR VIDEO    ║
+          ║  วิดีโอล่ามภาษามือ (แปล TSL → เสียง / เสียง → TSL)      ║
+          ║                                                          ║
+          ║  <video src="YOUR_INTERPRETER_VIDEO.mp4"                 ║
+          ║    autoplay muted loop playsinline></video>              ║
+          ╚══════════════════════════════════════════════════════════╝
+          -->
+          <video
+            src=""
+            autoplay muted loop playsinline
+            style="width:100%;height:100%;object-fit:cover;"
+            onerror="this.style.display='none'; document.getElementById('pip-placeholder').style.display='flex'">
+          </video>
+
+          <!-- PIP Fallback placeholder -->
+          <div class="pip-placeholder" id="pip-placeholder" style="display:flex;">
+            <div class="pip-icon">🧏</div>
+            <div class="pip-text">ล่าม TSL</div>
+          </div>
+        </div>
+        <div class="pip-badge">ล่ามภาษามือ</div>
+      </div>
+      <!-- END PIP -->
+
+      <!-- ┌─────────────────────────────────┐ -->
+      <!-- │  SUBTITLE BAR (Bottom)          │ -->
+      <!-- └─────────────────────────────────┘ -->
+      <div class="subtitle-bar">
+        <div class="subtitle-inner">
+          <div class="subtitle-from">คู่สนทนา</div>
+          <div class="subtitle-text" id="subtitle-text">
+            สวัสดีครับ <span class="highlight">วันนี้มีนัดเวลา 10 โมง</span> ใช่ไหมครับ?
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end .phone-frame -->
+  </div>
+  <!-- END PHONE -->
+
+
+  <!-- ═══════════════════════════════════════ -->
+  <!--       RIGHT: INFO / LEGEND PANEL        -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="info-panel">
+    <h2>📋 UI Elements</h2>
+
+    <div class="info-card">
+      <div class="card-title">Layout</div>
+      <div class="card-body">
+        <span class="tag tag-cyan">Top 50%</span> Caller Video<br>
+        <span class="tag tag-green">Bottom 50%</span> Self View<br>
+        <span class="tag tag-cyan">PIP</span> Interpreter
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="card-title">Visual Cues</div>
+      <div class="card-body">
+        <span class="tag tag-cyan">🔵 Blink</span> Speaking<br>
+        <span class="tag tag-red">🤚✕ Fade-in</span> OOF Alert
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="card-title">Accessibility</div>
+      <div class="card-body" style="font-size:11px; line-height:1.7; color: var(--text-muted);">
+        ✓ ไม่มีคีย์บอร์ด<br>
+        ✓ Visual-only alerts<br>
+        ✓ High contrast text<br>
+        ✓ Large tap targets<br>
+        ✓ PIP กึ่งกลาง–ซ้าย
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="card-title">Replace Media</div>
+      <div class="card-body" style="font-size:11px; line-height:1.7; color: var(--text-muted);">
+        🔍 Search in code:<br>
+        <code style="font-size:10px; color:var(--accent-cyan);">REPLACE THIS</code><br>
+        to find all 3 video slots
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════ -->
+  <!--              JAVASCRIPT                 -->
+  <!-- ═══════════════════════════════════════ -->
+  <script>
+    // ── State ──
+    let speakingActive = false;
+    let oofActive = false;
+    let callSeconds = 0;
+    let timerInterval = null;
+
+    // ── Call Timer ──
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        callSeconds++;
+        const m = String(Math.floor(callSeconds / 60)).padStart(2, '0');
+        const s = String(callSeconds % 60).padStart(2, '0');
+        document.getElementById('call-timer').textContent = `${m}:${s}`;
+      }, 1000);
+    }
+
+    function resetTimer() {
+      callSeconds = 0;
+      document.getElementById('call-timer').textContent = '00:00';
+    }
+
+    // ── Status bar clock ──
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('status-time').textContent = `${h}:${m}`;
+    }
+
+    // ── Speaking Indicator ──
+    function toggleSpeaking() {
+      speakingActive = !speakingActive;
+      const indicator = document.getElementById('speaking-indicator');
+      const videoTop = document.getElementById('video-top');
+      const btn = document.getElementById('btn-speaking');
+
+      if (speakingActive) {
+        indicator.classList.add('visible');
+        videoTop.classList.add('speaking-active');
+        btn.classList.add('active-speaking');
+        // Auto cycle subtitle
+        cycleSubtitles();
+      } else {
+        indicator.classList.remove('visible');
+        videoTop.classList.remove('speaking-active');
+        btn.classList.remove('active-speaking');
+        clearInterval(subtitleInterval);
+      }
+    }
+
+    // ── Subtitle Cycling ──
+    const dummySubtitles = [
+      { from: 'คู่สนทนา', text: 'สวัสดีครับ <span class="highlight">วันนี้มีนัดเวลา 10 โมง</span> ใช่ไหมครับ?' },
+      { from: 'คู่สนทนา', text: 'ขอยืนยัน<span class="highlight">ที่อยู่</span>อีกครั้งได้ไหมครับ?' },
+      { from: 'คู่สนทนา', text: 'ครับ ทราบแล้ว <span class="highlight">ขอบคุณมากครับ</span>' },
+      { from: 'คู่สนทนา', text: 'รบกวน<span class="highlight">ส่งเอกสาร</span>ทางอีเมลด้วยนะครับ' },
+    ];
+    let subIdx = 0;
+    let subtitleInterval = null;
+
+    function cycleSubtitles() {
+      subtitleInterval = setInterval(() => {
+        subIdx = (subIdx + 1) % dummySubtitles.length;
+        const s = dummySubtitles[subIdx];
+        document.getElementById('subtitle-text').innerHTML = s.text;
+      }, 2800);
+    }
+
+    // ── Out of Frame Alert ──
+    function toggleOOF() {
+      oofActive = !oofActive;
+      const alert = document.getElementById('oof-alert');
+      const btn = document.getElementById('btn-oof');
+
+      if (oofActive) {
+        alert.classList.add('visible');
+        btn.classList.add('active-oof');
+        // Auto-dismiss after 5s
+        setTimeout(() => {
+          if (oofActive) toggleOOF();
+        }, 5000);
+      } else {
+        alert.classList.remove('visible');
+        btn.classList.remove('active-oof');
+      }
+    }
+
+    // ── End Call ──
+    function endCall() {
+      const phone = document.getElementById('phone');
+      phone.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+      phone.style.opacity = '0';
+      phone.style.transform = 'scale(0.96)';
+      setTimeout(() => {
+        phone.style.opacity = '1';
+        phone.style.transform = 'scale(1)';
+        // Reset state
+        speakingActive = true; toggleSpeaking(); // ensure off
+        oofActive = true; toggleOOF(); // ensure off
+        resetTimer();
+      }, 500);
+    }
+
+    // ── Init ──
+    updateClock();
+    setInterval(updateClock, 10000);
+    startTimer();
+  </script>
+
+</body>
+</html>
