@@ -976,6 +976,59 @@ vid.addEventListener('canplay', function() {
   document.getElementById('videoPlaceholder').classList.add('hidden');
   vid.style.display = 'block';
 });
+
+async function translateAndPlayVideo(thaiText) {
+    // 1. ส่งข้อความไปให้ FastAPI
+    const response = await fetch("http://localhost:8000/api/text-to-sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: thaiText })
+    });
+    
+    const result = await response.json();
+    console.log("Glosses:", result.glosses);
+    
+    // 2. เอารายชื่อวิดีโอมาเล่นต่อกัน (Seamless Playback)
+    const videosToPlay = result.video_sequence;
+    if (videosToPlay && videosToPlay.length > 0) {
+        playVideoQueue(videosToPlay);
+    }
+}
+
+function playVideoQueue(videoUrls) {
+    const videoElement = document.getElementById('mainVideo');
+    document.getElementById('videoPlaceholder').classList.add('hidden');
+    videoElement.style.display = 'block';
+    
+    let currentVideoIdx = 0;
+    
+    // ตั้งค่าเมื่อเล่นจบ 1 คลิป ให้เล่นคลิปถัดไปทันที
+    videoElement.onended = function() {
+        currentVideoIdx++;
+        if (currentVideoIdx < videoUrls.length) {
+            videoElement.src = "http://localhost:8000" + videoUrls[currentVideoIdx];
+            videoElement.play();
+        } else {
+            // เล่นจบประโยคแล้ว
+            console.log("เล่นวิดีโอครบแล้ว");
+        }
+    };
+    
+    // เริ่มเล่นคลิปแรก
+    videoElement.src = "http://localhost:8000" + videoUrls[0];
+    videoElement.play();
+}
+
+document.getElementById('sendBtn').addEventListener('click', () => {
+    const inp = document.getElementById('msgInput');
+    const txt = inp.value.trim();
+    if (!txt) return;
+    
+    addMessage(txt, 'self');
+    translateAndPlayVideo(txt); // เรียกใช้ฟังก์ชันแปล!
+    inp.value = '';
+});
+
 </script>
 
 </body>
