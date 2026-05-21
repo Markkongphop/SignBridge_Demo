@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SignBridge</title>
+  <style>
+    :root {
+      --bg: #0b1015;
+      --panel: #121a22;
+      --panel-2: #16212c;
+      --text: #eef6ff;
+      --muted: #90a4b8;
+      --accent: #00d4aa;
+      --accent-2: #00a8ff;
+      --danger: #ff5c6c;
+      --border: rgba(255, 255, 255, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at top, #112133 0%, var(--bg) 60%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .shell {
+      width: min(430px, 100%);
+      height: min(920px, 100vh - 20px);
+      background: rgba(8, 12, 18, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 18px 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .title {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(0, 212, 170, 0.12);
+      border: 1px solid rgba(0, 212, 170, 0.3);
+      color: var(--accent);
+      font-size: 12px;
+    }
+
+    .video-stage {
+      position: relative;
+      flex: 1;
+      min-height: 320px;
+      background: #000;
+    }
+
+    #remoteVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+    }
+
+    .placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: linear-gradient(160deg, #132333, #091119);
+      color: var(--muted);
+      text-align: center;
+      padding: 20px;
+    }
+
+    .avatar {
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #031219;
+      font-size: 28px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .local-pip {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      width: 112px;
+      aspect-ratio: 9 / 16;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: #0f151d;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    #localVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    .subtitle {
+      padding: 14px 16px;
+      background: #05080c;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .subtitle-label {
+      color: var(--accent);
+      font-size: 11px;
+      margin-bottom: 6px;
+      letter-spacing: 0.08em;
+    }
+
+    .subtitle-text {
+      font-size: 21px;
+      line-height: 1.4;
+      min-height: 30px;
+    }
+
+    .chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: var(--panel);
+    }
+
+    .msg {
+      max-width: 82%;
+      padding: 10px 12px;
+      border-radius: 14px;
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .msg.self {
+      align-self: flex-end;
+      background: rgba(0, 212, 170, 0.22);
+    }
+
+    .msg.remote {
+      align-self: flex-start;
+      background: var(--panel-2);
+    }
+
+    .msg small {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .composer {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      background: #0e151d;
+    }
+
+    .composer input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: #111b24;
+      color: var(--text);
+      padding: 12px 14px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .composer button,
+    .controls button {
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .composer button:active,
+    .controls button:active {
+      transform: scale(0.96);
+    }
+
+    #sendBtn {
+      width: 46px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #051317;
+      font-weight: 700;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      background: #0a1016;
+    }
+
+    .controls button {
+      min-height: 54px;
+      border-radius: 14px;
+      background: #121a22;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .controls button.active {
+      background: rgba(0, 212, 170, 0.18);
+      color: var(--accent);
+    }
+
+    .controls button.danger {
+      background: rgba(255, 92, 108, 0.16);
+      color: #ff8d98;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      background: rgba(7, 12, 18, 0.96);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 10px 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="shell">
+    <div class="header">
+      <div class="title">
+        <h1>SignBridge</h1>
+        <div class="meta">คู่สาย: signbridge_deaf_ui · <span id="callTime">00:00</span></div>
+      </div>
+      <div class="badge" id="statusBadge">กำลังเชื่อมต่อ</div>
+    </div>
+
+    <div class="video-stage">
+      <video id="remoteVideo" playsinline autoplay muted></video>
+      <div class="placeholder" id="remotePlaceholder">
+        <div class="avatar">SB</div>
+        <div>รอวิดีโอจาก signbridge_deaf_ui</div>
+      </div>
+      <div class="local-pip">
+        <video id="localVideo" playsinline autoplay muted></video>
+      </div>
+    </div>
+
+    <div class="subtitle">
+      <div class="subtitle-label">TSL -> TEXT</div>
+      <div class="subtitle-text" id="subtitleText">พร้อมเริ่มวิดีโอคอล</div>
+    </div>
+
+    <div class="chat" id="chatHistory"></div>
+
+    <div class="composer">
+      <input id="messageInput" type="text" placeholder="พิมพ์ข้อความเพื่อส่งไปยังหน้าคนหูหนวก">
+      <button id="sendBtn">ส่ง</button>
+    </div>
+
+    <div class="controls">
+      <button id="cameraBtn" class="active">กล้อง</button>
+      <button id="reconnectBtn">โทรใหม่</button>
+      <button id="endBtn" class="danger">วางสาย</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const SIGNAL_URL = `${wsProtocol}//${window.location.host}/ws`;
+    const API_URL = "/api/text-to-sign";
+    const RTC_CONFIG = {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun.relay.metered.ca:80" },
+        {
+          urls: "turn:standard.relay.metered.ca:80",
+          username: "73d81511f3d6c60b060171fe",
+          credential: "Lh24SPG/W78VueIU",
+        },
+        {
+          urls: "turn:standard.relay.metered.ca:80?transport=tcp",
+          username: "73d81511f3d6c60b060171fe",
+          credential: "Lh24SPG/W78VueIU",
+        },
+        {
+          urls: "turn:standard.relay.metered.ca:443",
+          username: "73d81511f3d6c60b060171fe",
+          credential: "Lh24SPG/W78VueIU",
+        },
+        {
+          urls: "turns:standard.relay.metered.ca:443?transport=tcp",
+          username: "73d81511f3d6c60b060171fe",
+          credential: "Lh24SPG/W78VueIU",
+        }
+      ]
+    };
+
+    function readTurnConfig() {
+      const query = new URLSearchParams(window.location.search);
+      const queryUrls = query.getAll("turn_url").filter(Boolean);
+      const queryUsername = query.get("turn_username") || "";
+      const queryCredential = query.get("turn_credential") || "";
+
+      if (queryUrls.length && queryUsername && queryCredential) {
+        return { urls: queryUrls, username: queryUsername, credential: queryCredential };
+      }
+
+      try {
+        const raw = window.localStorage.getItem("signbridge_turn_config");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.urls && parsed.username && parsed.credential) {
+            return parsed;
+          }
+        }
+      } catch (error) {
+        console.warn("Unable to parse local TURN config", error);
+      }
+
+      if (
+        window.SIGNBRIDGE_TURN_CONFIG &&
+        window.SIGNBRIDGE_TURN_CONFIG.urls &&
+        window.SIGNBRIDGE_TURN_CONFIG.username &&
+        window.SIGNBRIDGE_TURN_CONFIG.credential
+      ) {
+        return window.SIGNBRIDGE_TURN_CONFIG;
+      }
+
+      return null;
+    }
+
+    const turnConfig = readTurnConfig();
+    if (turnConfig) {
+      RTC_CONFIG.iceServers.push({
+        urls: turnConfig.urls,
+        username: turnConfig.username,
+        credential: turnConfig.credential
+      });
+      console.log("TURN config enabled");
+    } else {
+      console.log("TURN config not set, using STUN only");
+    }
+
+    const ROLE = "signbridge";
+    const TARGET_ROLE = "signbridge_deaf_ui";
+    const CLIENT_ID = `${ROLE}-${Math.random().toString(36).slice(2, 10)}`;
+
+    const remoteVideo = document.getElementById("remoteVideo");
+    const localVideo = document.getElementById("localVideo");
+    const remotePlaceholder = document.getElementById("remotePlaceholder");
+    const statusBadge = document.getElementById("statusBadge");
+    const subtitleText = document.getElementById("subtitleText");
+    const chatHistory = document.getElementById("chatHistory");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const cameraBtn = document.getElementById("cameraBtn");
+    const reconnectBtn = document.getElementById("reconnectBtn");
+    const endBtn = document.getElementById("endBtn");
+    const callTime = document.getElementById("callTime");
+    const toast = document.getElementById("toast");
+
+    let socket = null;
+    let peerConnection = null;
+    let localStream = null;
+    let remoteStream = null;
+    let pendingCandidates = [];
+    let callSeconds = 0;
+    let timerId = null;
+    let cameraFacingMode = "user";
+    let pendingMessageId = 0;
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+
+    function setStatus(text, connected = false) {
+      statusBadge.textContent = text;
+      statusBadge.style.color = connected ? "var(--accent)" : "var(--muted)";
+      statusBadge.style.borderColor = connected ? "rgba(0,212,170,0.3)" : "rgba(255,255,255,0.1)";
+    }
+
+    function describeIceState(state) {
+      if (state === "new" || state === "checking") return "กำลังหาเส้นทางวิดีโอ";
+      if (state === "connected" || state === "completed") return "วิดีโอเชื่อมต่อแล้ว";
+      if (state === "disconnected") return "วิดีโอหลุดชั่วคราว";
+      if (state === "failed") return "ต่อวิดีโอไม่ได้ - น่าจะต้องใช้ TURN";
+      if (state === "closed") return "ปิดการเชื่อมต่อวิดีโอ";
+      return `ICE: ${state}`;
+    }
+
+    function addMessage(text, side) {
+      const item = document.createElement("div");
+      item.className = `msg ${side}`;
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, "0");
+      const mm = String(now.getMinutes()).padStart(2, "0");
+      item.innerHTML = `${text}<small>${hh}:${mm}</small>`;
+      chatHistory.appendChild(item);
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    function updateCallTimer() {
+      callSeconds += 1;
+      const mm = String(Math.floor(callSeconds / 60)).padStart(2, "0");
+      const ss = String(callSeconds % 60).padStart(2, "0");
+      callTime.textContent = `${mm}:${ss}`;
+    }
+
+    function startTimer() {
+      clearInterval(timerId);
+      timerId = setInterval(updateCallTimer, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerId);
+      timerId = null;
+      callSeconds = 0;
+      callTime.textContent = "00:00";
+    }
+
+    function sendSignal(payload) {
+      if (!socket || socket.readyState !== WebSocket.OPEN) return;
+      socket.send(JSON.stringify({
+        senderId: CLIENT_ID,
+        role: ROLE,
+        targetRole: TARGET_ROLE,
+        ...payload
+      }));
+    }
+
+    async function createPeerConnection() {
+      if (peerConnection) return peerConnection;
+
+      peerConnection = new RTCPeerConnection(RTC_CONFIG);
+      remoteStream = new MediaStream();
+      remoteVideo.srcObject = remoteStream;
+
+      peerConnection.ontrack = (event) => {
+        event.streams[0].getTracks().forEach((track) => remoteStream.addTrack(track));
+        remotePlaceholder.style.display = "none";
+        remoteVideo.play().catch(() => { });
+      };
+
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          sendSignal({ type: "rtc_ice", candidate: event.candidate });
+        }
+      };
+
+      peerConnection.oniceconnectionstatechange = () => {
+        if (!peerConnection) return;
+        const iceState = peerConnection.iceConnectionState;
+        if (iceState === "connected" || iceState === "completed") {
+          setStatus(describeIceState(iceState), true);
+        } else {
+          setStatus(describeIceState(iceState));
+        }
+      };
+
+      peerConnection.onconnectionstatechange = () => {
+        if (!peerConnection) return;
+        const state = peerConnection.connectionState;
+        if (state === "connected") {
+          setStatus("เชื่อมต่อแล้ว", true);
+          startTimer();
+        }
+        if (state === "disconnected" || state === "failed" || state === "closed") {
+          setStatus(state === "failed" ? "ต่อวิดีโอไม่ได้ - น่าจะต้องใช้ TURN" : "สายหลุด");
+          remotePlaceholder.style.display = "flex";
+          stopTimer();
+        }
+      };
+
+      if (localStream) {
+        localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
+      }
+
+      return peerConnection;
+    }
+
+    async function flushPendingCandidates() {
+      if (!peerConnection || !peerConnection.remoteDescription) return;
+      while (pendingCandidates.length) {
+        await peerConnection.addIceCandidate(pendingCandidates.shift());
+      }
+    }
+
+    async function openLocalMedia() {
+      try {
+        if (localStream) {
+          localStream.getTracks().forEach((track) => track.stop());
+        }
+
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: { facingMode: cameraFacingMode }
+        });
+
+        localVideo.srcObject = localStream;
+        localVideo.play().catch(() => { });
+
+        if (peerConnection) {
+          const senders = peerConnection.getSenders();
+          localStream.getTracks().forEach((track) => {
+            const sender = senders.find((item) => item.track && item.track.kind === track.kind);
+            if (sender) sender.replaceTrack(track);
+            else peerConnection.addTrack(track, localStream);
+          });
+        }
+      } catch (error) {
+        console.warn("Could not access camera/mic:", error);
+        localStream = null;
+        showToast("ไม่สามารถเปิดกล้องได้ แต่ยังดูวิดีโอและรับข้อความได้");
+      }
+    }
+
+    async function makeOffer() {
+      const pc = await createPeerConnection();
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      sendSignal({ type: "rtc_offer", sdp: offer });
+    }
+
+    async function handleSignal(message) {
+      if (message.senderId === CLIENT_ID) return;
+
+      if (message.type === "join" && message.role === TARGET_ROLE) {
+        await makeOffer();
+        return;
+      }
+
+      if (message.type === "rtc_offer" && message.role === TARGET_ROLE) {
+        const pc = await createPeerConnection();
+        await pc.setRemoteDescription(new RTCSessionDescription(message.sdp));
+        await flushPendingCandidates();
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        sendSignal({ type: "rtc_answer", sdp: answer });
+        return;
+      }
+
+      if (message.type === "rtc_answer" && message.role === TARGET_ROLE && peerConnection) {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(message.sdp));
+        await flushPendingCandidates();
+        return;
+      }
+
+      if (message.type === "rtc_ice" && message.role === TARGET_ROLE) {
+        const candidate = new RTCIceCandidate(message.candidate);
+        if (peerConnection && peerConnection.remoteDescription) {
+          await peerConnection.addIceCandidate(candidate);
+        } else {
+          pendingCandidates.push(candidate);
+        }
+        return;
+      }
+
+      if (message.type === "deaf_msg") {
+        subtitleText.textContent = message.text;
+        addMessage(message.text, "remote");
+      }
+    }
+
+    async function connectSocket() {
+      socket = new WebSocket(SIGNAL_URL);
+
+      socket.addEventListener("open", async () => {
+        setStatus("พร้อมโทร");
+        sendSignal({ type: "join" });
+        await makeOffer().catch(() => { });
+      });
+
+      socket.addEventListener("message", async (event) => {
+        try {
+          await handleSignal(JSON.parse(event.data));
+        } catch (error) {
+          console.error("signal error", error);
+        }
+      });
+
+      socket.addEventListener("close", () => {
+        setStatus("signal ปิด");
+      });
+    }
+
+    async function sendTextMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      const messageId = `${CLIENT_ID}-${Date.now()}-${pendingMessageId++}`;
+      addMessage(text, "self");
+      messageInput.value = "";
+      subtitleText.textContent = text;
+
+      sendSignal({
+        type: "hearing_msg",
+        messageId,
+        text,
+        video_sequence: [],
+        translation_pending: true
+      });
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true"
+          },
+          body: JSON.stringify({ text })
+        });
+        const result = await response.json();
+        sendSignal({
+          type: "hearing_msg",
+          messageId,
+          text,
+          glosses: typeof result.glosses === "string" ? result.glosses : "",
+          video_sequence: Array.isArray(result.video_sequence) ? result.video_sequence : [],
+          translation_pending: false
+        });
+      } catch (error) {
+        console.error(error);
+        sendSignal({
+          type: "hearing_msg",
+          messageId,
+          text,
+          video_sequence: [],
+          translation_pending: false,
+          translation_error: true
+        });
+        showToast("ส่งข้อความไม่สำเร็จ");
+      }
+    }
+
+    function toggleCamera() {
+      if (!localStream) return;
+      const enabled = !localStream.getVideoTracks()[0].enabled;
+      localStream.getVideoTracks().forEach((track) => track.enabled = enabled);
+      cameraBtn.classList.toggle("active", enabled);
+      showToast(enabled ? "เปิดกล้องแล้ว" : "ปิดกล้องแล้ว");
+    }
+
+    async function reconnectCall() {
+      setStatus("กำลังโทรใหม่");
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
+      pendingCandidates = [];
+      await openLocalMedia();
+      await makeOffer();
+      showToast("ส่งคำขอเชื่อมต่อใหม่แล้ว");
+    }
+
+    function endCall() {
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
+      if (localStream) {
+        localStream.getTracks().forEach((track) => track.stop());
+      }
+      remotePlaceholder.style.display = "flex";
+      setStatus("วางสายแล้ว");
+      stopTimer();
+      showToast("วางสายแล้ว");
+    }
+
+    sendBtn.addEventListener("click", sendTextMessage);
+    messageInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") sendTextMessage();
+    });
+    cameraBtn.addEventListener("click", toggleCamera);
+    reconnectBtn.addEventListener("click", reconnectCall);
+    endBtn.addEventListener("click", endCall);
+
+    (async function init() {
+      try {
+        await openLocalMedia();
+        await connectSocket();
+      } catch (error) {
+        console.error(error);
+        setStatus("ต้องอนุญาตกล้อง");
+        showToast("กรุณาอนุญาตกล้อง");
+      }
+    })();
+  </script>
+</body>
+
+</html>

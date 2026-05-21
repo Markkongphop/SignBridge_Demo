@@ -1,1083 +1,731 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>SignBridge – Thai Sign Language Video Call</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SignBridge</title>
+  <style>
+    :root {
+      --bg: #0b1015;
+      --panel: #121a22;
+      --panel-2: #16212c;
+      --text: #eef6ff;
+      --muted: #90a4b8;
+      --accent: #00d4aa;
+      --accent-2: #00a8ff;
+      --danger: #ff5c6c;
+      --border: rgba(255, 255, 255, 0.08);
+    }
 
-<style>
-  /* ============================================================
-     CSS VARIABLES — Dark mode palette
-     HCI Rationale: Dark theme reduces eye strain for Deaf users
-     who rely heavily on vision. High contrast (>7:1) meets WCAG AAA.
-     ============================================================ */
-  :root {
-    --bg-deep:       #080C10;
-    --bg-surface:    #0E1419;
-    --bg-overlay:    #141C24;
-    --accent-teal:   #00D4AA;
-    --accent-teal-dim:#007A62;
-    --accent-warn:   #FF6B35;
-    --text-primary:  #F0F4F8;
-    --text-secondary:#8BA3B8;
-    --text-subtitle: #FFFFFF;
-    --sub-bg:        rgba(0,0,0,0.82);
-    --border:        rgba(255,255,255,0.08);
-    --glass:         rgba(14,20,25,0.72);
-    --red:           #E53E3E;
-    --font-main:     'IBM Plex Sans Thai', sans-serif;
-    --font-mono:     'IBM Plex Mono', monospace;
-  }
+    * {
+      box-sizing: border-box;
+    }
 
-  /* ============================================================
-     RESET & BASE
-     ============================================================ */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at top, #112133 0%, var(--bg) 60%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
 
-  html, body {
-    width: 100%; height: 100%;
-    background: var(--bg-deep);
-    color: var(--text-primary);
-    font-family: var(--font-main);
-    overflow: hidden;
-    -webkit-font-smoothing: antialiased;
-  }
+    .shell {
+      width: min(430px, 100%);
+      height: min(920px, 100vh - 20px);
+      background: rgba(8, 12, 18, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
+    }
 
-  /* ============================================================
-     APP SHELL — Fixed phone-frame at center (demo wrapper)
-     ============================================================ */
-  .phone-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    background: radial-gradient(ellipse at 50% 30%, #0a1a2f 0%, #080C10 70%);
-  }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 18px 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border);
+    }
 
-  .phone-frame {
-    /* HCI Rationale: Max 430px width = thumb-reach zone on modern smartphones */
-    width: min(430px, 100vw);
-    height: min(932px, 100vh);
-    background: var(--bg-deep);
-    border-radius: clamp(0px, 3vw, 44px);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 40px 80px rgba(0,0,0,0.8);
-  }
+    .title {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
 
-  /* ============================================================
-     STATUS BAR
-     ============================================================ */
-  .status-bar {
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 20px;
-    background: var(--bg-deep);
-    flex-shrink: 0;
-    z-index: 10;
-  }
-  .status-time { font-size: 15px; font-weight: 600; letter-spacing: 0.3px; }
-  .status-icons { display: flex; gap: 6px; align-items: center; }
-  .status-icons svg { width: 16px; height: 16px; fill: var(--text-primary); }
+    .title h1 {
+      margin: 0;
+      font-size: 18px;
+    }
 
-  /* ============================================================
-     TOP CALL HEADER
-     ============================================================ */
-  .call-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 16px 10px;
-    background: var(--bg-deep);
-    flex-shrink: 0;
-    z-index: 10;
-  }
-  .caller-info { display: flex; align-items: center; gap: 10px; }
-  .caller-avatar {
-    width: 38px; height: 38px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent-teal-dim), var(--accent-teal));
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px; font-weight: 700; color: #000;
-    flex-shrink: 0;
-  }
-  .caller-name { font-size: 16px; font-weight: 600; }
-  .call-duration { font-size: 12px; color: var(--accent-teal); font-family: var(--font-mono); margin-top: 1px; }
-  .signal-badge {
-    background: rgba(0,212,170,0.12);
-    border: 1px solid rgba(0,212,170,0.3);
-    border-radius: 20px;
-    padding: 4px 10px;
-    font-size: 11px;
-    color: var(--accent-teal);
-    font-weight: 500;
-    letter-spacing: 0.5px;
-  }
+    .meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
 
-  /* ============================================================
-     SPLIT SCREEN LAYOUT — 50:50
-     HCI Rationale: Equal split ensures visual area is large enough
-     for sign language perception while text area has sufficient
-     reading space. Ratio can be adjusted by dragging (future).
-     ============================================================ */
-  .split-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    min-height: 0;
-  }
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(0, 212, 170, 0.12);
+      border: 1px solid rgba(0, 212, 170, 0.3);
+      color: var(--accent);
+      font-size: 12px;
+    }
 
-  /* ============================================================
-     TOP HALF — VIDEO AREA (No controls, edge-to-edge)
-     HCI Rationale: Zero UI overlay on the visual zone.
-     Deaf users need 100% unobstructed view for sign reading.
-     This is "Visual Priority" principle in Accessibility Design.
-     ============================================================ */
-  .video-zone {
-    flex: 1;
-    position: relative;
-    background: #000;
-    overflow: hidden;
-    /* HCI: No border-radius on top halves → full bleed video feel */
-  }
+    .video-stage {
+      position: relative;
+      flex: 1;
+      min-height: 320px;
+      background: #000;
+    }
 
-  /* Remote video — fills entire top half */
-  .video-main {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    display: block;
-    background: #0a0a0a;
-  }
+    #remoteVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+    }
 
-  /* Placeholder when no real video */
-  .video-placeholder {
-    width: 100%; height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 12px;
-    background: linear-gradient(160deg, #0d1f2d 0%, #071018 100%);
-    position: absolute;
-    inset: 0;
-    transition: opacity 0.4s;
-  }
-  .video-placeholder.hidden { opacity: 0; pointer-events: none; }
-  .placeholder-icon {
-    width: 72px; height: 72px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent-teal-dim), var(--accent-teal));
-    display: flex; align-items: center; justify-content: center;
-    font-size: 30px;
-    box-shadow: 0 0 40px rgba(0,212,170,0.25);
-    animation: pulse-glow 2.4s ease-in-out infinite;
-  }
-  @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px rgba(0,212,170,0.2); }
-    50%       { box-shadow: 0 0 50px rgba(0,212,170,0.5); }
-  }
-  .placeholder-name { font-size: 17px; font-weight: 600; }
-  .placeholder-sub  { font-size: 13px; color: var(--text-secondary); }
+    .placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: linear-gradient(160deg, #132333, #091119);
+      color: var(--muted);
+      text-align: center;
+      padding: 20px;
+    }
 
-  /* Keypoint overlay canvas — MediaPipe skeleton drawn here */
-  /* HCI Rationale: Overlay sits on top of video without blocking it;
-     semi-transparent so original video remains readable */
-  .keypoint-canvas {
-    position: absolute;
-    inset: 0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.5s;
-  }
-  .keypoint-canvas.visible { opacity: 1; }
+    .avatar {
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #031219;
+      font-size: 28px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-  /* Translate-mode indicator pill — top-right corner, minimal */
-  /* HCI Rationale: Status indicator is tiny & semi-transparent;
-     positioned top-right to stay out of the main signing area */
-  .translate-badge {
-    position: absolute;
-    top: 12px; right: 12px;
-    background: rgba(0,212,170,0.15);
-    border: 1px solid rgba(0,212,170,0.4);
-    backdrop-filter: blur(8px);
-    border-radius: 20px;
-    padding: 5px 12px;
-    font-size: 11px;
-    color: var(--accent-teal);
-    font-weight: 600;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    opacity: 0;
-    transform: translateY(-4px);
-    transition: opacity 0.3s, transform 0.3s;
-    pointer-events: none;
-  }
-  .translate-badge.visible { opacity: 1; transform: translateY(0); }
+    .local-pip {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      width: 112px;
+      aspect-ratio: 9 / 16;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: #0f151d;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
 
-  /* PiP — self-view (bottom-left of video zone) */
-  /* HCI Rationale: PiP is small (22% of width), positioned bottom-left
-     (right-hand thumb side) so it doesn't block the signing area.
-     Rounded to distinguish from main feed. */
-  .pip-self {
-    position: absolute;
-    bottom: 12px; left: 12px;
-    width: 22%;
-    aspect-ratio: 9/16;
-    background: #1a2a3a;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1.5px solid rgba(255,255,255,0.12);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
-  }
+    #localVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
 
-  /* ============================================================
-     DIVIDER — Visual breathing room between zones
-     ============================================================ */
-  .zone-divider {
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent-teal-dim), transparent);
-    flex-shrink: 0;
-    opacity: 0.4;
-  }
+    .subtitle {
+      padding: 14px 16px;
+      background: #05080c;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
 
-  /* ============================================================
-     BOTTOM HALF — TEXT + CONTROL AREA
-     ============================================================ */
-  .text-zone {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: var(--bg-surface);
-    overflow: hidden;
-    min-height: 0;
-  }
+    .subtitle-label {
+      color: var(--accent);
+      font-size: 11px;
+      margin-bottom: 6px;
+      letter-spacing: 0.08em;
+    }
 
-  /* ---- SUBTITLE DISPLAY ----
-     HCI Rationale:
-     - Black background with white text = max contrast (>15:1)
-     - 22px minimum font size for legibility at arm's length
-     - Single-line or short bursts reduce working memory load
-     - "Subtitle strip" concept borrowed from cinema accessibility
-  */
-  .subtitle-area {
-    background: #000;
-    padding: 14px 18px 12px;
-    min-height: 80px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    position: relative;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    flex-shrink: 0;
-  }
-  .subtitle-label {
-    font-size: 10px;
-    color: var(--accent-teal);
-    font-weight: 600;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-    font-family: var(--font-mono);
-  }
-  .subtitle-text {
-    font-size: 22px;
-    font-weight: 500;
-    color: var(--text-subtitle);
-    line-height: 1.4;
-    transition: opacity 0.2s;
-    min-height: 30px;
-  }
-  .subtitle-text.updating { opacity: 0.4; }
+    .subtitle-text {
+      font-size: 21px;
+      line-height: 1.4;
+      min-height: 30px;
+    }
 
-  /* Confidence dot */
-  .confidence-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 8px;
-  }
-  .confidence-bar {
-    flex: 1;
-    height: 3px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-  .confidence-fill {
-    height: 100%;
-    background: var(--accent-teal);
-    border-radius: 2px;
-    transition: width 0.5s ease;
-    width: 87%;
-  }
-  .confidence-pct {
-    font-size: 10px;
-    color: var(--text-secondary);
-    font-family: var(--font-mono);
-    white-space: nowrap;
-  }
+    .chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: var(--panel);
+    }
 
-  /* ---- CHAT HISTORY ---- */
-  .chat-history {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-height: 0;
-  }
-  .chat-history::-webkit-scrollbar { width: 3px; }
-  .chat-history::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+    .msg {
+      max-width: 82%;
+      padding: 10px 12px;
+      border-radius: 14px;
+      line-height: 1.45;
+      font-size: 14px;
+    }
 
-  /* HCI Rationale: Bubble alignment (left=remote, right=self) mirrors
-     standard messaging convention — reduces learning curve to zero */
-  .msg {
-    max-width: 78%;
-    padding: 8px 12px;
-    border-radius: 14px;
-    font-size: 14px;
-    line-height: 1.5;
-    position: relative;
-    animation: msg-in 0.2s ease-out;
-  }
-  @keyframes msg-in {
-    from { opacity: 0; transform: translateY(6px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .msg.remote {
-    background: var(--bg-overlay);
-    color: var(--text-primary);
-    align-self: flex-start;
-    border-bottom-left-radius: 4px;
-  }
-  .msg.self {
-    background: var(--accent-teal-dim);
-    color: #fff;
-    align-self: flex-end;
-    border-bottom-right-radius: 4px;
-  }
-  .msg-meta {
-    font-size: 10px;
-    color: var(--text-secondary);
-    margin-top: 3px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-family: var(--font-mono);
-  }
-  .msg.self .msg-meta { justify-content: flex-end; color: rgba(255,255,255,0.5); }
-  .tsl-tag {
-    background: rgba(0,212,170,0.15);
-    color: var(--accent-teal);
-    border-radius: 4px;
-    padding: 1px 5px;
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-  }
+    .msg.self {
+      align-self: flex-end;
+      background: rgba(0, 212, 170, 0.22);
+    }
 
-  /* ---- INPUT ROW ----
-     HCI Rationale:
-     - Full-width bottom bar = thumb-reachable zone
-     - Large tap targets (min 48px height) per WCAG 2.5.5
-     - Icon-only secondary actions save horizontal space
-  */
-  .input-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 12px;
-    background: var(--bg-surface);
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-  .text-input {
-    flex: 1;
-    background: var(--bg-overlay);
-    border: 1px solid var(--border);
-    border-radius: 24px;
-    padding: 10px 16px;
-    font-size: 14px;
-    font-family: var(--font-main);
-    color: var(--text-primary);
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .text-input:focus { border-color: var(--accent-teal-dim); }
-  .text-input::placeholder { color: var(--text-secondary); }
+    .msg.remote {
+      align-self: flex-start;
+      background: var(--panel-2);
+    }
 
-  /* Send button */
-  .btn-send {
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    background: var(--accent-teal);
-    border: none;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    transition: transform 0.15s, background 0.2s;
-    /* HCI: Circular send = universally recognized affordance */
-  }
-  .btn-send:active { transform: scale(0.92); background: var(--accent-teal-dim); }
-  .btn-send svg { width: 18px; height: 18px; fill: #000; }
+    .msg small {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 11px;
+    }
 
-  /* ---- BOTTOM CONTROL BAR ----
-     HCI Rationale:
-     - Fixed at very bottom = Prime thumb zone (bottom 30% of screen)
-     - Consistent placement = muscle memory for frequent actions
-     - 3 controls max per "Miller's Law" — avoid cognitive overload
-     - Destructive action (End Call) uses red, spatially separated
-  */
-  .control-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-    padding: 12px 16px 20px;
-    background: var(--bg-deep);
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-  }
+    .composer {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      background: #0e151d;
+    }
 
-  .ctrl-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-secondary);
-    font-size: 10px;
-    font-family: var(--font-main);
-    font-weight: 500;
-    letter-spacing: 0.3px;
-    transition: color 0.2s;
-    min-width: 56px;
-    /* HCI: Column layout (icon+label) aids recognition for all users */
-  }
-  .ctrl-btn:active { color: var(--text-primary); }
+    .composer input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: #111b24;
+      color: var(--text);
+      padding: 12px 14px;
+      font-size: 14px;
+      outline: none;
+    }
 
-  .ctrl-icon {
-    width: 50px; height: 50px;
-    border-radius: 50%;
-    background: var(--bg-overlay);
-    border: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s, border-color 0.2s, transform 0.15s;
-  }
-  .ctrl-btn:active .ctrl-icon { transform: scale(0.92); }
-  .ctrl-icon svg { width: 20px; height: 20px; fill: var(--text-secondary); transition: fill 0.2s; }
+    .composer button,
+    .controls button {
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
 
-  /* Active state for togglable controls */
-  .ctrl-btn.active .ctrl-icon {
-    background: rgba(0,212,170,0.12);
-    border-color: rgba(0,212,170,0.4);
-  }
-  .ctrl-btn.active .ctrl-icon svg { fill: var(--accent-teal); }
-  .ctrl-btn.active { color: var(--accent-teal); }
+    .composer button:active,
+    .controls button:active {
+      transform: scale(0.96);
+    }
 
-  /* End call — red, center */
-  .ctrl-btn.end-call .ctrl-icon {
-    background: var(--red);
-    border-color: var(--red);
-    width: 58px; height: 58px;
-  }
-  .ctrl-btn.end-call .ctrl-icon svg { fill: #fff; width: 22px; height: 22px; }
-  .ctrl-btn.end-call { color: var(--red); }
+    #sendBtn {
+      width: 46px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #051317;
+      font-weight: 700;
+    }
 
-  /* Muted / disabled state */
-  .ctrl-btn.muted .ctrl-icon {
-    background: rgba(229,62,62,0.12);
-    border-color: rgba(229,62,62,0.4);
-  }
-  .ctrl-btn.muted .ctrl-icon svg { fill: var(--red); }
-  .ctrl-btn.muted { color: var(--red); }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      background: #0a1016;
+    }
 
-  /* ============================================================
-     MODAL — Translate mode activation feedback
-     HCI Rationale: Modal confirmation prevents accidental mode switches;
-     brief (auto-dismiss) reduces interruption to the call flow.
-     ============================================================ */
-  .toast {
-    position: absolute;
-    bottom: 130px; left: 50%; transform: translateX(-50%) translateY(10px);
-    background: rgba(0,212,170,0.95);
-    color: #000;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 10px 20px;
-    border-radius: 24px;
-    white-space: nowrap;
-    opacity: 0;
-    transition: opacity 0.25s, transform 0.25s;
-    pointer-events: none;
-    z-index: 100;
-  }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .controls button {
+      min-height: 54px;
+      border-radius: 14px;
+      background: #121a22;
+      color: var(--text);
+      font-size: 13px;
+    }
 
-  /* ============================================================
-     DEMO MODE LABEL (for presentation)
-     ============================================================ */
-  .demo-label {
-    position: fixed;
-    top: 12px; right: 16px;
-    font-size: 10px;
-    color: rgba(255,255,255,0.2);
-    font-family: var(--font-mono);
-    letter-spacing: 1px;
-    pointer-events: none;
-  }
+    .controls button.active {
+      background: rgba(0, 212, 170, 0.18);
+      color: var(--accent);
+    }
 
-  /* ============================================================
-     RESPONSIVE — Full bleed on narrow screens
-     ============================================================ */
-  @media (max-width: 430px) {
-    .phone-wrapper { background: var(--bg-deep); }
-    .phone-frame { border-radius: 0; box-shadow: none; width: 100vw; height: 100dvh; }
-  }
-</style>
+    .controls button.danger {
+      background: rgba(255, 92, 108, 0.16);
+      color: #ff8d98;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      background: rgba(7, 12, 18, 0.96);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 10px 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
 </head>
+
 <body>
+  <div class="shell">
+    <div class="header">
+      <div class="title">
+        <h1>SignBridge</h1>
+        <div class="meta">คู่สาย: signbridge_deaf_ui · <span id="callTime">00:00</span></div>
+      </div>
+      <div class="badge" id="statusBadge">กำลังเชื่อมต่อ</div>
+    </div>
 
-<div class="phone-wrapper">
-  <div class="phone-frame" id="app">
-
-    <!-- STATUS BAR -->
-    <div class="status-bar">
-      <span class="status-time" id="clock">9:41</span>
-      <div class="status-icons">
-        <!-- Signal -->
-        <svg viewBox="0 0 24 24"><rect x="2" y="14" width="3" height="8"/><rect x="7" y="10" width="3" height="12"/><rect x="12" y="6" width="3" height="16"/><rect x="17" y="2" width="3" height="20" opacity=".3"/></svg>
-        <!-- Wifi -->
-        <svg viewBox="0 0 24 24"><path d="M1.5 9A12 12 0 0122.5 9M5.5 13a8 8 0 0113 0M9.5 17a4 4 0 015 0M12 21h.01" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
-        <!-- Battery -->
-        <svg viewBox="0 0 24 24"><rect x="2" y="7" width="18" height="11" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="20" y="10" width="2" height="5" rx="1"/><rect x="3.5" y="8.5" width="13" height="8" rx="1"/></svg>
+    <div class="video-stage">
+      <video id="remoteVideo" playsinline autoplay muted></video>
+      <div class="placeholder" id="remotePlaceholder">
+        <div class="avatar">SB</div>
+        <div>รอวิดีโอจาก signbridge_deaf_ui</div>
+      </div>
+      <div class="local-pip">
+        <video id="localVideo" playsinline autoplay muted></video>
       </div>
     </div>
 
-    <!-- CALL HEADER -->
-    <div class="call-header">
-      <div class="caller-info">
-        <div class="caller-avatar">ส</div>
-        <div>
-          <div class="caller-name">สมศรี วงค์ใจดี</div>
-          <div class="call-duration" id="duration">00:03:42</div>
-        </div>
-      </div>
-      <div class="signal-badge">HD ● TSL</div>
+    <div class="subtitle">
+      <div class="subtitle-label">TSL -> TEXT</div>
+      <div class="subtitle-text" id="subtitleText">พร้อมเริ่มวิดีโอคอล</div>
     </div>
 
-    <!-- SPLIT CONTAINER -->
-    <div class="split-container">
+    <div class="chat" id="chatHistory"></div>
 
-      <!-- ═══════════════════════════════════════════
-           TOP HALF — VIDEO ZONE (NO UI OVERLAY)
-           HCI: Edge-to-edge, distraction-free visual area
-           ═══════════════════════════════════════════ -->
-      <div class="video-zone" id="videoZone">
+    <div class="composer">
+      <input id="messageInput" type="text" placeholder="พิมพ์ข้อความเพื่อส่งไปยังหน้าคนหูหนวก">
+      <button id="sendBtn">ส่ง</button>
+    </div>
 
-        <!-- Remote video — swap src with real file path -->
-        <video class="video-main" id="mainVideo" playsinline autoplay muted style="display:block">
-        </video>
+    <div class="controls">
+      <button id="cameraBtn" class="active">กล้อง</button>
+      <button id="reconnectBtn">โทรใหม่</button>
+      <button id="endBtn" class="danger">วางสาย</button>
+    </div>
+  </div>
 
-        <!-- Placeholder shown when no video loaded -->
-        <div class="video-placeholder" id="videoPlaceholder">
-          <div class="placeholder-icon">🤟</div>
-          <div class="placeholder-name">สมศรี วงค์ใจดี</div>
-          <div class="placeholder-sub">กำลังสนทนา… (แทนด้วยวิดีโอจริง)</div>
-        </div>
+  <div class="toast" id="toast"></div>
 
-        <!-- MediaPipe keypoint overlay canvas
-             HCI: Pointer-events:none so it never blocks interaction -->
-        <canvas class="keypoint-canvas" id="keypointCanvas"
-                width="430" height="466"
-                title="MediaPipe skeleton overlay — replace with real canvas data">
-        </canvas>
-
-        <!-- Translate-mode badge — minimal indicator -->
-        <div class="translate-badge" id="translateBadge">🔤 TSL LIVE</div>
-
-        <!-- PiP self-view -->
-        <div class="pip-self">
-    <video id="hearingLocalCam" autoplay muted playsinline 
-           style="width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1);">
-    </video>
-</div>
-      </div>
-
-      <!-- DIVIDER -->
-      <div class="zone-divider"></div>
-
-      <!-- ═══════════════════════════════════════════
-           BOTTOM HALF — TEXT ZONE
-           ═══════════════════════════════════════════ -->
-      <div class="text-zone">
-
-        <!-- SUBTITLE STRIP
-             HCI: Cinema-inspired subtitle design. Black bg + white text
-             maximizes contrast for quick reading between sign-watching -->
-        <div class="subtitle-area">
-          <div class="subtitle-label">▶ TSL → TEXT</div>
-          <div class="subtitle-text" id="subtitleText">อาจารย์หล่อมาก</div>
-          <div class="confidence-row">
-            <div class="confidence-bar">
-              <div class="confidence-fill" id="confidenceFill" style="width:100%"></div>
-            </div>
-            <span class="confidence-pct" id="confidencePct">100%</span>
-          </div>
-        </div>
-
-        <!-- CHAT HISTORY
-             HCI: Persistent transcript = external memory aid,
-             reduces cognitive load of remembering what was said -->
-        <div class="chat-history" id="chatHistory">
-
-          <div class="msg remote">
-            สวัสดีครับ
-            <div class="msg-meta"><span class="tsl-tag">TSL</span> 09:38</div>
-          </div>
-          <div class="msg self">
-            สวัสดีครับ ดีใจที่ได้คุยด้วย
-            <div class="msg-meta">09:38 ✓✓</div>
-          </div>
-          <div class="msg remote">
-            วันนี้มีเวลาคุยเรื่องโปรเจกต์ไหมครับ?
-            <div class="msg-meta"><span class="tsl-tag">TSL</span> 09:39</div>
-          </div>
-          <div class="msg self">
-            ได้เลยครับ พร้อมแล้ว
-            <div class="msg-meta">09:39 ✓✓</div>
-          </div>
-          <div class="msg remote">
-            สวัสดีครับ วันนี้เป็นยังไงบ้าง?
-            <div class="msg-meta"><span class="tsl-tag">TSL</span> 09:41</div>
-          </div>
-
-        </div>
-
-        <!-- TEXT INPUT ROW -->
-        <div class="input-row">
-          <input class="text-input" id="msgInput"
-                 type="text" placeholder="พิมพ์ข้อความ…"
-                 autocomplete="off">
-          <!-- HCI: Send button = large circle, thumb-reachable bottom-right -->
-          <button class="btn-send" id="sendBtn" title="ส่งข้อความ">
-            <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
-          </button>
-        </div>
-
-        <!-- ─────────────────────────────────────────────
-             BOTTOM CONTROL BAR
-             HCI Rationale for each button:
-             • Mic: Mute audio when Deaf user doesn't need it
-             • TSL Translate: Core feature toggle — prominent, labeled
-             • End Call: Red + separated to prevent accidental tap
-             • Cam: Camera flip
-             HCI: Max 4 controls. Spacing ≥ 8px between tap targets.
-             ───────────────────────────────────────────── -->
-        <div class="control-bar">
-
-          <!-- Mic toggle -->
-          <button class="ctrl-btn muted" id="btnMic" title="เปิด/ปิดไมค์">
-            <div class="ctrl-icon">
-              <svg viewBox="0 0 24 24">
-                <!-- Mic-off icon -->
-                <path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4M9.5 3.5A2 2 0 0112 2a2 2 0 012 2v5a2 2 0 01-4 0V4z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-                <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </div>
-            ปิดเสียง
-          </button>
-
-          <!-- TSL Translate toggle — PRIMARY FEATURE
-               HCI: Positioned center-left (not dead-center = end call reserved)
-               Teal color = brand action color, instantly recognizable -->
-          <button class="ctrl-btn" id="btnTSL" title="เปิด/ปิดการแปลภาษามือ">
-            <div class="ctrl-icon">
-              <!-- Hand/sign icon -->
-              <svg viewBox="0 0 24 24">
-                <path d="M6 10v5a6 6 0 0012 0V7a1 1 0 00-2 0v3M10 4v7M14 4v7M6 10V6a1 1 0 012 0v4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            แปลภาษามือ
-          </button>
-
-          <!-- End Call — red, largest, center
-               HCI: Placed dead-center of control bar = easiest to find
-               under stress; color red = universal stop affordance -->
-          <button class="ctrl-btn end-call" id="btnEnd" title="วางสาย">
-            <div class="ctrl-icon">
-              <svg viewBox="0 0 24 24">
-                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16l.01.02z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" transform="rotate(135 12 12)"/>
-              </svg>
-            </div>
-            วางสาย
-          </button>
-
-          <!-- Camera flip -->
-          <button class="ctrl-btn active" id="btnCam" title="สลับกล้อง">
-            <div class="ctrl-icon">
-              <svg viewBox="0 0 24 24">
-                <path d="M23 7l-7 5 7 5V7z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/>
-                <rect x="1" y="5" width="15" height="14" rx="2" stroke="currentColor" stroke-width="1.8" fill="none"/>
-              </svg>
-            </div>
-            กล้อง
-          </button>
-
-        </div><!-- /control-bar -->
-
-      </div><!-- /text-zone -->
-    </div><!-- /split-container -->
-
-    <!-- Toast notification -->
-    <div class="toast" id="toast"></div>
-
-  </div><!-- /phone-frame -->
-</div><!-- /phone-wrapper -->
-
-<div class="demo-label">SignBridge v0.1 · HCI Prototype</div>
-
-<!-- ============================================================
-     JAVASCRIPT — Demo Logic
-     ============================================================ -->
-<script>
-/*
-  HCI Rationale for all JS behavior:
-  - Subtitle cycling = simulates real-time TSL→text output
-  - Timer = gives user temporal context of call duration
-  - Toggle states = clear visual feedback on mode changes
-  - No blocking modals = maintains flow state
-*/
-
-// ── Clock & Timer ──────────────────────────────────────────────
-(function initClock() {
-  const clock = document.getElementById('clock');
-  function update() {
-    const d = new Date();
-    const h = d.getHours().toString().padStart(2,'0');
-    const m = d.getMinutes().toString().padStart(2,'0');
-    clock.textContent = `${h}:${m}`;
-  }
-  update();
-  setInterval(update, 30000);
-})();
-
-let callSeconds = 222; // 3:42 start
-(function initTimer() {
-  const el = document.getElementById('duration');
-  function tick() {
-    callSeconds++;
-    const m = Math.floor(callSeconds/60).toString().padStart(2,'0');
-    const s = (callSeconds%60).toString().padStart(2,'0');
-    el.textContent = `${m}:${s}`;
-  }
-  setInterval(tick, 1000);
-})();
-
-// ── Subtitle Rotation (Demo — replace with real WS feed) ───────
-const subtitleLines = [
-  { text: 'สวัสดีครับ วันนี้เป็นยังไงบ้าง?',    conf: 87 },
-  { text: 'โปรเจกต์เสร็จแล้วหรือยังครับ?',       conf: 91 },
-  { text: 'ขอบคุณมากเลยนะครับ',                   conf: 95 },
-  { text: 'ผมเข้าใจแล้วครับ ไม่มีปัญหา',          conf: 83 },
-  { text: 'เดี๋ยวส่งไฟล์ให้ทางแชทเลยได้เลย',     conf: 78 },
-  { text: 'เราพูดคุยกันใหม่พรุ่งนี้ไหมครับ?',      conf: 89 },
-];
-let subIdx = 0;
-let translateActive = false;
-
-function cycleSubtitle() {
-  if (!translateActive) return;
-  const subtitleEl = document.getElementById('subtitleText');
-  const confFill = document.getElementById('confidenceFill');
-  const confPct  = document.getElementById('confidencePct');
-
-  subtitleEl.classList.add('updating');
-  setTimeout(() => {
-    subIdx = (subIdx + 1) % subtitleLines.length;
-    const line = subtitleLines[subIdx];
-    subtitleEl.textContent = line.text;
-    subtitleEl.classList.remove('updating');
-    confFill.style.width = line.conf + '%';
-    confPct.textContent  = line.conf + '%';
-
-    // Auto-append to chat history
-    addMessage(line.text, 'remote', true);
-  }, 200);
-}
-
-// ── Message Helper ─────────────────────────────────────────────
-function addMessage(text, side, isTSL = false) {
-  const history = document.getElementById('chatHistory');
-  const div = document.createElement('div');
-  div.className = `msg ${side}`;
-  const d = new Date();
-  const t = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-  div.innerHTML = `${text}<div class="msg-meta">${isTSL ? '<span class="tsl-tag">TSL</span> ' : ''}${t}${side==='self' ? ' ✓✓' : ''}</div>`;
-  history.appendChild(div);
-  history.scrollTop = history.scrollHeight;
-}
-
-// ── Send Button ────────────────────────────────────────────────
-document.getElementById('sendBtn').addEventListener('click', sendMsg);
-document.getElementById('msgInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') sendMsg();
-});
-function sendMsg() {
-  const inp = document.getElementById('msgInput');
-  const txt = inp.value.trim();
-  if (!txt) return;
-  addMessage(txt, 'self');
-  inp.value = '';
-}
-
-// ── Toast Helper ───────────────────────────────────────────────
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
-}
-
-// ── TSL Toggle — PRIMARY FEATURE ──────────────────────────────
-let tslInterval = null;
-document.getElementById('btnTSL').addEventListener('click', function() {
-  translateActive = !translateActive;
-  this.classList.toggle('active', translateActive);
-  document.getElementById('translateBadge').classList.toggle('visible', translateActive);
-  document.getElementById('keypointCanvas').classList.toggle('visible', translateActive);
-
-  if (translateActive) {
-    showToast('✅ เปิดการแปลภาษามือแล้ว');
-    drawDemoKeypoints(); // draw static demo skeleton
-    tslInterval = setInterval(cycleSubtitle, 3500);
-  } else {
-    showToast('⏹ ปิดการแปลภาษามือ');
-    clearInterval(tslInterval);
-    clearCanvas();
-  }
-});
-
-// ── Mic Toggle ────────────────────────────────────────────────
-document.getElementById('btnMic').addEventListener('click', function() {
-  this.classList.toggle('muted');
-  const isMuted = this.classList.contains('muted');
-  showToast(isMuted ? '🔇 ปิดไมค์' : '🎙 เปิดไมค์');
-  this.querySelector('.ctrl-btn + span, .ctrl-btn span') // just label tweak via text
-  this.lastChild.textContent = isMuted ? 'ปิดเสียง' : 'เปิดเสียง';
-});
-
-// ── Cam Toggle ────────────────────────────────────────────────
-document.getElementById('btnCam').addEventListener('click', function() {
-  this.classList.toggle('active');
-  showToast('🔄 สลับกล้องแล้ว');
-});
-
-// ── End Call ──────────────────────────────────────────────────
-document.getElementById('btnEnd').addEventListener('click', function() {
-  if (confirm('ต้องการวางสายใช่ไหม?')) {
-    showToast('📵 วางสายแล้ว');
-    setTimeout(() => {
-      document.getElementById('app').style.opacity = '0.3';
-      document.getElementById('app').style.pointerEvents = 'none';
-    }, 800);
-  }
-});
-
-// ── Demo Keypoint Drawing (replaces real MediaPipe canvas output)
-// HCI Rationale: Skeleton overlay helps hearing users understand
-// what signs are being detected, provides system transparency.
-function drawDemoKeypoints() {
-  const canvas = document.getElementById('keypointCanvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = canvas.offsetWidth;
-  canvas.height = canvas.offsetHeight;
-
-  const w = canvas.width, h = canvas.height;
-  const cx = w * 0.5, cy = h * 0.38;
-
-  ctx.clearRect(0, 0, w, h);
-
-  // Skeleton style — teal glow
-  ctx.strokeStyle = 'rgba(0, 212, 170, 0.75)';
-  ctx.lineWidth   = 2;
-  ctx.shadowColor = 'rgba(0, 212, 170, 0.5)';
-  ctx.shadowBlur  = 8;
-
-  // Body connections (simplified)
-  const pts = {
-    nose:   [cx, cy - 40],
-    lSh:    [cx - 50, cy + 20],
-    rSh:    [cx + 50, cy + 20],
-    lEl:    [cx - 70, cy + 80],
-    rEl:    [cx + 85, cy + 60],
-    lWr:    [cx - 60, cy + 140],
-    rWr:    [cx + 100, cy + 100],
-    lHip:   [cx - 40, cy + 130],
-    rHip:   [cx + 40, cy + 130],
-  };
-
-  function line(a, b) {
-    ctx.beginPath();
-    ctx.moveTo(...a); ctx.lineTo(...b);
-    ctx.stroke();
-  }
-
-  line(pts.lSh, pts.rSh);
-  line(pts.lSh, pts.lEl); line(pts.lEl, pts.lWr);
-  line(pts.rSh, pts.rEl); line(pts.rEl, pts.rWr);
-  line(pts.lSh, pts.lHip); line(pts.rSh, pts.rHip);
-  line(pts.lHip, pts.rHip);
-
-  // Joints
-  ctx.fillStyle = 'rgba(0, 212, 170, 0.9)';
-  ctx.shadowBlur = 12;
-  Object.values(pts).forEach(([x, y]) => {
-    ctx.beginPath();
-    ctx.arc(x, y, 4, 0, Math.PI * 2);
-    ctx.fill();
-  });
-
-  // Hand keypoints (right hand raised — signing)
-  const hx = pts.rWr[0], hy = pts.rWr[1];
-  ctx.fillStyle = 'rgba(255, 200, 50, 0.9)';
-  ctx.shadowColor = 'rgba(255, 200, 50, 0.6)';
-  ctx.shadowBlur  = 10;
-  const fingers = [
-    [hx-10, hy-30],[hx-2, hy-35],[hx+6, hy-32],
-    [hx+13, hy-28],[hx+19, hy-20]
-  ];
-  fingers.forEach(([fx, fy]) => {
-    ctx.beginPath(); ctx.arc(fx, fy, 3.5, 0, Math.PI*2); ctx.fill();
-  });
-}
-
-function clearCanvas() {
-  const canvas = document.getElementById('keypointCanvas');
-  canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-}
-
-// ── Try to play <video> if src is set ─────────────────────────
-const vid = document.getElementById('mainVideo');
-vid.addEventListener('canplay', function() {
-  document.getElementById('videoPlaceholder').classList.add('hidden');
-  vid.style.display = 'block';
-});
-
-async function translateAndPlayVideo(thaiText) {
-    // 1. ส่งข้อความไปให้ FastAPI
-    const response = await fetch("http://localhost:8000/api/text-to-sign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: thaiText })
-    });
-    
-    const result = await response.json();
-    console.log("Glosses:", result.glosses);
-    
-    // 2. เอารายชื่อวิดีโอมาเล่นต่อกัน (Seamless Playback)
-    const videosToPlay = result.video_sequence;
-    if (videosToPlay && videosToPlay.length > 0) {
-        playVideoQueue(videosToPlay);
-    }
-}
-
-const idleVideos = [
-    "/videos/อาจารย์.mp4", // แก้ชื่อไฟล์เป็นของคุณ เช่น /videos/wait1.mp4
-    "/videos/หล่อ.mp4", 
-    "/videos/มาก.mp4"
-];
-
-let currentIdleIdx = 0;
-let isPlayingTranslation = false;
-
-// 2. ฟังก์ชันเริ่มเล่นวิดีโอวนลูป (สถานะปกติ)
-function startIdleLoop() {
-    isPlayingTranslation = false;
-    const videoElement = document.getElementById('mainVideo');
-    document.getElementById('videoPlaceholder').classList.add('hidden');
-    videoElement.loop = false; // ปิด loop เพื่อให้ onended ทำงาน
-    
-    // ตั้งค่า src ให้ชี้ไปที่ไฟล์ใน FastAPI
-    videoElement.src = "http://localhost:8000" + idleVideos[currentIdleIdx];
-    videoElement.play().catch(e => console.log("รอผู้ใช้คลิกหน้าจอก่อนถึงจะ Autoplay ได้", e));
-
-    videoElement.onended = function() {
-        if (!isPlayingTranslation) {
-            // ถ้าไม่ได้แปลอยู่ ให้เล่นวิดีโอคิวต่อไป (1->2->3->1)
-            currentIdleIdx = (currentIdleIdx + 1) % idleVideos.length;
-            videoElement.src = "http://localhost:8000" + idleVideos[currentIdleIdx];
-            videoElement.play();
-        }
+  <script>
+    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const SIGNAL_URL = `${wsProtocol}//${window.location.host}/ws`;
+    const API_URL = "/api/text-to-sign";
+    const RTC_CONFIG = {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" }
+      ]
     };
-}
 
-// 3. ฟังก์ชันเล่นวิดีโอคำแปล (ถูกเรียกเมื่อส่งข้อความ)
-function playVideoQueue(videoUrls) {
-    isPlayingTranslation = true; // บอกระบบว่ากำลังแปลอยู่! ห้ามวนลูป Idle
-    const videoElement = document.getElementById('mainVideo');
-    videoElement.loop = false;
-    
-    let currentVideoIdx = 0;
-    
-    videoElement.onended = function() {
-        currentVideoIdx++;
-        if (currentVideoIdx < videoUrls.length) {
-            // เล่นคำต่อไปในประโยค
-            videoElement.src = "http://localhost:8000" + videoUrls[currentVideoIdx];
-            videoElement.play();
+    function readTurnConfig() {
+      const query = new URLSearchParams(window.location.search);
+      const queryUrls = query.getAll("turn_url").filter(Boolean);
+      const queryUsername = query.get("turn_username") || "";
+      const queryCredential = query.get("turn_credential") || "";
+
+      if (queryUrls.length && queryUsername && queryCredential) {
+        return { urls: queryUrls, username: queryUsername, credential: queryCredential };
+      }
+
+      try {
+        const raw = window.localStorage.getItem("signbridge_turn_config");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.urls && parsed.username && parsed.credential) {
+            return parsed;
+          }
+        }
+      } catch (error) {
+        console.warn("Unable to parse local TURN config", error);
+      }
+
+      if (
+        window.SIGNBRIDGE_TURN_CONFIG &&
+        window.SIGNBRIDGE_TURN_CONFIG.urls &&
+        window.SIGNBRIDGE_TURN_CONFIG.username &&
+        window.SIGNBRIDGE_TURN_CONFIG.credential
+      ) {
+        return window.SIGNBRIDGE_TURN_CONFIG;
+      }
+
+      return null;
+    }
+
+    const turnConfig = readTurnConfig();
+    if (turnConfig) {
+      RTC_CONFIG.iceServers.push({
+        urls: turnConfig.urls,
+        username: turnConfig.username,
+        credential: turnConfig.credential
+      });
+      console.log("TURN config enabled");
+    } else {
+      console.log("TURN config not set, using STUN only");
+    }
+
+    const ROLE = "signbridge";
+    const TARGET_ROLE = "signbridge_deaf_ui";
+    const CLIENT_ID = `${ROLE}-${Math.random().toString(36).slice(2, 10)}`;
+
+    const remoteVideo = document.getElementById("remoteVideo");
+    const localVideo = document.getElementById("localVideo");
+    const remotePlaceholder = document.getElementById("remotePlaceholder");
+    const statusBadge = document.getElementById("statusBadge");
+    const subtitleText = document.getElementById("subtitleText");
+    const chatHistory = document.getElementById("chatHistory");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const cameraBtn = document.getElementById("cameraBtn");
+    const reconnectBtn = document.getElementById("reconnectBtn");
+    const endBtn = document.getElementById("endBtn");
+    const callTime = document.getElementById("callTime");
+    const toast = document.getElementById("toast");
+
+    let socket = null;
+    let peerConnection = null;
+    let localStream = null;
+    let remoteStream = null;
+    let pendingCandidates = [];
+    let callSeconds = 0;
+    let timerId = null;
+    let cameraFacingMode = "user";
+    let pendingMessageId = 0;
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+
+    function setStatus(text, connected = false) {
+      statusBadge.textContent = text;
+      statusBadge.style.color = connected ? "var(--accent)" : "var(--muted)";
+      statusBadge.style.borderColor = connected ? "rgba(0,212,170,0.3)" : "rgba(255,255,255,0.1)";
+    }
+
+    function describeIceState(state) {
+      if (state === "new" || state === "checking") return "กำลังหาเส้นทางวิดีโอ";
+      if (state === "connected" || state === "completed") return "วิดีโอเชื่อมต่อแล้ว";
+      if (state === "disconnected") return "วิดีโอหลุดชั่วคราว";
+      if (state === "failed") return "ต่อวิดีโอไม่ได้ - น่าจะต้องใช้ TURN";
+      if (state === "closed") return "ปิดการเชื่อมต่อวิดีโอ";
+      return `ICE: ${state}`;
+    }
+
+    function addMessage(text, side) {
+      const item = document.createElement("div");
+      item.className = `msg ${side}`;
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, "0");
+      const mm = String(now.getMinutes()).padStart(2, "0");
+      item.innerHTML = `${text}<small>${hh}:${mm}</small>`;
+      chatHistory.appendChild(item);
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    function updateCallTimer() {
+      callSeconds += 1;
+      const mm = String(Math.floor(callSeconds / 60)).padStart(2, "0");
+      const ss = String(callSeconds % 60).padStart(2, "0");
+      callTime.textContent = `${mm}:${ss}`;
+    }
+
+    function startTimer() {
+      clearInterval(timerId);
+      timerId = setInterval(updateCallTimer, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerId);
+      timerId = null;
+      callSeconds = 0;
+      callTime.textContent = "00:00";
+    }
+
+    function sendSignal(payload) {
+      if (!socket || socket.readyState !== WebSocket.OPEN) return;
+      socket.send(JSON.stringify({
+        senderId: CLIENT_ID,
+        role: ROLE,
+        targetRole: TARGET_ROLE,
+        ...payload
+      }));
+    }
+
+    async function createPeerConnection() {
+      if (peerConnection) return peerConnection;
+
+      peerConnection = new RTCPeerConnection(RTC_CONFIG);
+      remoteStream = new MediaStream();
+      remoteVideo.srcObject = remoteStream;
+
+      peerConnection.ontrack = (event) => {
+        event.streams[0].getTracks().forEach((track) => remoteStream.addTrack(track));
+        remotePlaceholder.style.display = "none";
+        remoteVideo.play().catch(() => { });
+      };
+
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          sendSignal({ type: "rtc_ice", candidate: event.candidate });
+        }
+      };
+
+      peerConnection.oniceconnectionstatechange = () => {
+        if (!peerConnection) return;
+        const iceState = peerConnection.iceConnectionState;
+        if (iceState === "connected" || iceState === "completed") {
+          setStatus(describeIceState(iceState), true);
         } else {
-            // เล่นประโยคแปลจบแล้ว! ให้กลับไปวนลูปสถานะปกติ
-            console.log("✅ เล่นประโยคแปลจบแล้ว กลับสู่โหมดรอรับสาย (Idle)");
-            startIdleLoop();
+          setStatus(describeIceState(iceState));
         }
-    };
-    
-    // เริ่มเล่นคำแรกที่ได้จาก API
-    videoElement.src = "http://localhost:8000" + videoUrls[0];
-    videoElement.play();
-}
+      };
 
-// เริ่มต้นเปิดมาให้เล่นวิดีโอวนลูปทันที
-startIdleLoop();
+      peerConnection.onconnectionstatechange = () => {
+        if (!peerConnection) return;
+        const state = peerConnection.connectionState;
+        if (state === "connected") {
+          setStatus("เชื่อมต่อแล้ว", true);
+          startTimer();
+        }
+        if (state === "disconnected" || state === "failed" || state === "closed") {
+          setStatus(state === "failed" ? "ต่อวิดีโอไม่ได้ - น่าจะต้องใช้ TURN" : "สายหลุด");
+          remotePlaceholder.style.display = "flex";
+          stopTimer();
+        }
+      };
 
-document.getElementById('sendBtn').addEventListener('click', () => {
-    const inp = document.getElementById('msgInput');
-    const txt = inp.value.trim();
-    if (!txt) return;
-    
-    addMessage(txt, 'self');
-    translateAndPlayVideo(txt); // เรียกใช้ฟังก์ชันแปล!
-    inp.value = '';
-});
-async function startHearingLocalCamera() {
-    const localVid = document.getElementById('hearingLocalCam');
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: "user" } 
-        });
-        localVid.srcObject = stream;
-        console.log("✅ เปิดกล้อง Self-view สำเร็จ");
-    } catch (err) {
-        console.error("❌ ไม่สามารถเปิดกล้องได้:", err);
+      if (localStream) {
+        localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
+      }
+
+      return peerConnection;
     }
-}
 
-// สั่งให้เปิดกล้องทันทีที่โหลดหน้าเว็บ
-startHearingLocalCamera();
-</script>
+    async function flushPendingCandidates() {
+      if (!peerConnection || !peerConnection.remoteDescription) return;
+      while (pendingCandidates.length) {
+        await peerConnection.addIceCandidate(pendingCandidates.shift());
+      }
+    }
 
+    async function openLocalMedia() {
+      try {
+        if (localStream) {
+          localStream.getTracks().forEach((track) => track.stop());
+        }
+
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: { facingMode: cameraFacingMode }
+        });
+
+        localVideo.srcObject = localStream;
+        localVideo.play().catch(() => { });
+
+        if (peerConnection) {
+          const senders = peerConnection.getSenders();
+          localStream.getTracks().forEach((track) => {
+            const sender = senders.find((item) => item.track && item.track.kind === track.kind);
+            if (sender) sender.replaceTrack(track);
+            else peerConnection.addTrack(track, localStream);
+          });
+        }
+      } catch (error) {
+        console.warn("Could not access camera/mic:", error);
+        localStream = null;
+        showToast("ไม่สามารถเปิดกล้องได้ แต่ยังดูวิดีโอและรับข้อความได้");
+      }
+    }
+
+    async function makeOffer() {
+      const pc = await createPeerConnection();
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      sendSignal({ type: "rtc_offer", sdp: offer });
+    }
+
+    async function handleSignal(message) {
+      if (message.senderId === CLIENT_ID) return;
+
+      if (message.type === "join" && message.role === TARGET_ROLE) {
+        await makeOffer();
+        return;
+      }
+
+      if (message.type === "rtc_offer" && message.role === TARGET_ROLE) {
+        const pc = await createPeerConnection();
+        await pc.setRemoteDescription(new RTCSessionDescription(message.sdp));
+        await flushPendingCandidates();
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        sendSignal({ type: "rtc_answer", sdp: answer });
+        return;
+      }
+
+      if (message.type === "rtc_answer" && message.role === TARGET_ROLE && peerConnection) {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(message.sdp));
+        await flushPendingCandidates();
+        return;
+      }
+
+      if (message.type === "rtc_ice" && message.role === TARGET_ROLE) {
+        const candidate = new RTCIceCandidate(message.candidate);
+        if (peerConnection && peerConnection.remoteDescription) {
+          await peerConnection.addIceCandidate(candidate);
+        } else {
+          pendingCandidates.push(candidate);
+        }
+        return;
+      }
+
+      if (message.type === "deaf_msg") {
+        subtitleText.textContent = message.text;
+        addMessage(message.text, "remote");
+      }
+    }
+
+    async function connectSocket() {
+      socket = new WebSocket(SIGNAL_URL);
+
+      socket.addEventListener("open", async () => {
+        setStatus("พร้อมโทร");
+        sendSignal({ type: "join" });
+        await makeOffer().catch(() => { });
+      });
+
+      socket.addEventListener("message", async (event) => {
+        try {
+          await handleSignal(JSON.parse(event.data));
+        } catch (error) {
+          console.error("signal error", error);
+        }
+      });
+
+      socket.addEventListener("close", () => {
+        setStatus("signal ปิด");
+      });
+    }
+
+    async function sendTextMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      const messageId = `${CLIENT_ID}-${Date.now()}-${pendingMessageId++}`;
+      addMessage(text, "self");
+      messageInput.value = "";
+      subtitleText.textContent = text;
+
+      sendSignal({
+        type: "hearing_msg",
+        messageId,
+        text,
+        video_sequence: [],
+        translation_pending: true
+      });
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text })
+        });
+        const result = await response.json();
+        sendSignal({
+          type: "hearing_msg",
+          messageId,
+          text,
+          glosses: typeof result.glosses === "string" ? result.glosses : "",
+          video_sequence: Array.isArray(result.video_sequence) ? result.video_sequence : [],
+          translation_pending: false
+        });
+      } catch (error) {
+        console.error(error);
+        sendSignal({
+          type: "hearing_msg",
+          messageId,
+          text,
+          video_sequence: [],
+          translation_pending: false,
+          translation_error: true
+        });
+        showToast("ส่งข้อความไม่สำเร็จ");
+      }
+    }
+
+    function toggleCamera() {
+      if (!localStream) return;
+      const enabled = !localStream.getVideoTracks()[0].enabled;
+      localStream.getVideoTracks().forEach((track) => track.enabled = enabled);
+      cameraBtn.classList.toggle("active", enabled);
+      showToast(enabled ? "เปิดกล้องแล้ว" : "ปิดกล้องแล้ว");
+    }
+
+    async function reconnectCall() {
+      setStatus("กำลังโทรใหม่");
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
+      pendingCandidates = [];
+      await openLocalMedia();
+      await makeOffer();
+      showToast("ส่งคำขอเชื่อมต่อใหม่แล้ว");
+    }
+
+    function endCall() {
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
+      if (localStream) {
+        localStream.getTracks().forEach((track) => track.stop());
+      }
+      remotePlaceholder.style.display = "flex";
+      setStatus("วางสายแล้ว");
+      stopTimer();
+      showToast("วางสายแล้ว");
+    }
+
+    sendBtn.addEventListener("click", sendTextMessage);
+    messageInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") sendTextMessage();
+    });
+    cameraBtn.addEventListener("click", toggleCamera);
+    reconnectBtn.addEventListener("click", reconnectCall);
+    endBtn.addEventListener("click", endCall);
+
+    (async function init() {
+      try {
+        await openLocalMedia();
+        await connectSocket();
+      } catch (error) {
+        console.error(error);
+        setStatus("ต้องอนุญาตกล้อง");
+        showToast("กรุณาอนุญาตกล้อง");
+      }
+    })();
+  </script>
 </body>
+
 </html>

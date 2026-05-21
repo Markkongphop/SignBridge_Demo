@@ -1,0 +1,6 @@
+﻿target_sign,correct_predictions,total_predictions,accuracy_percentage
+สวัสดี,26,30,86.67
+ฉัน,30,30,100.00
+รู้สึก,28,30,93.33
+ดีใจ,30,30,100.00
+ขอบคุณ,28,30,93.33

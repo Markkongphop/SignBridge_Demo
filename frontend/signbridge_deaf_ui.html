@@ -1,1129 +1,805 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SignBridge — Deaf User Screen</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SignBridge Deaf UI</title>
   <style>
     :root {
-      --bg-deep: #0a0c10;
-      --bg-surface: #12151c;
-      --accent-cyan: #00d4ff;
-      --accent-teal: #00b894;
-      --alert-red: #ff4757;
-      --alert-orange: #ff9f43;
-      --glass: rgba(255,255,255,0.06);
-      --glass-border: rgba(255,255,255,0.1);
-      --text-primary: #f0f4ff;
-      --text-muted: #8892a4;
+      --bg: #0a0e13;
+      --panel: #121922;
+      --panel-2: #17222e;
+      --text: #f2f7ff;
+      --muted: #95a8ba;
+      --accent: #00d4ff;
+      --accent-2: #00c389;
+      --danger: #ff6478;
+      --border: rgba(255, 255, 255, 0.08);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
-      font-family: 'DM Sans', 'Noto Sans Thai', sans-serif;
-      background: var(--bg-deep);
+      margin: 0;
       min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at top, #18283a 0%, var(--bg) 62%);
+      color: var(--text);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 32px;
-      padding: 32px 16px;
-      background-image:
-        radial-gradient(ellipse 60% 40% at 20% 30%, rgba(0,180,220,0.06) 0%, transparent 60%),
-        radial-gradient(ellipse 50% 60% at 80% 70%, rgba(0,184,148,0.05) 0%, transparent 60%);
+      padding: 20px;
     }
 
-    /* ─── Demo Controls Panel ─── */
-    .demo-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      width: 200px;
-      flex-shrink: 0;
-    }
-
-    .demo-panel h2 {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      border-bottom: 1px solid var(--glass-border);
-      padding-bottom: 10px;
-      margin-bottom: 4px;
-    }
-
-    .demo-btn {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 13px 14px;
-      border-radius: 12px;
-      border: 1px solid var(--glass-border);
-      background: var(--glass);
-      color: var(--text-primary);
-      cursor: pointer;
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 400;
-      line-height: 1.45;
-      text-align: left;
-      transition: all 0.2s ease;
-      backdrop-filter: blur(8px);
-    }
-
-    .demo-btn:hover {
-      background: rgba(255,255,255,0.1);
-      border-color: rgba(255,255,255,0.2);
-      transform: translateY(-1px);
-    }
-
-    .demo-btn:active { transform: translateY(0); }
-
-    .demo-btn .btn-icon {
-      font-size: 18px;
-      line-height: 1;
-      margin-top: 1px;
-      flex-shrink: 0;
-    }
-
-    .demo-btn .btn-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-
-    .demo-btn.active-speaking { border-color: var(--accent-cyan); background: rgba(0,212,255,0.1); }
-    .demo-btn.active-oof { border-color: var(--alert-orange); background: rgba(255,159,67,0.1); }
-
-    .demo-hint {
-      font-size: 11px;
-      color: var(--text-muted);
-      line-height: 1.6;
-      padding: 10px 12px;
-      border-radius: 8px;
-      border: 1px dashed rgba(255,255,255,0.08);
-    }
-
-    /* ─── Phone Frame ─── */
-    .phone-wrap {
-      position: relative;
-    }
-
-    .phone-frame {
-      width: 375px;
-      height: 780px;
-      border-radius: 44px;
-      background: #000;
-      border: 3px solid #2a2d35;
-      box-shadow:
-        0 0 0 1px #1a1c22,
-        0 60px 120px rgba(0,0,0,0.8),
-        0 20px 40px rgba(0,0,0,0.5),
-        inset 0 1px 0 rgba(255,255,255,0.08);
+    .frame {
+      width: min(390px, 100%);
+      height: min(830px, 100vh - 20px);
+      border-radius: 30px;
       overflow: hidden;
+      background: rgba(8, 12, 18, 0.96);
+      border: 1px solid var(--border);
+      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
+      display: grid;
+      grid-template-rows: auto 1fr 1fr auto auto;
       position: relative;
-      display: flex;
-      flex-direction: column;
     }
 
-    /* Notch */
-    .phone-notch {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 126px;
-      height: 34px;
-      background: #000;
-      border-radius: 0 0 20px 20px;
-      z-index: 100;
-    }
-
-    /* Status bar */
-    .status-bar {
-      position: absolute;
-      top: 10px;
-      left: 20px;
-      right: 20px;
-      z-index: 101;
+    .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 12px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.85);
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
     }
 
-    .status-right { display: flex; gap: 5px; align-items: center; }
+    .title h1 {
+      margin: 0;
+      font-size: 18px;
+    }
 
-    /* ─── Video Panels ─── */
-    .video-top, .video-bottom {
-      flex: 1;
+    .title div {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(0, 212, 255, 0.12);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      color: var(--accent);
+      font-size: 12px;
+    }
+
+    .stage {
       position: relative;
+      background: #000;
       overflow: hidden;
     }
 
-    .video-top { border-radius: 44px 44px 0 0; }
-    .video-bottom { border-radius: 0 0 44px 44px; }
-
-    .video-top video,
-    .video-top .vid-placeholder,
-    .video-bottom video,
-    .video-bottom .vid-placeholder {
+    .stage video {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
+      background: #000;
     }
 
-    /* Gradient divider effect */
-    .video-top::after {
-      content: '';
+    .placeholder {
       position: absolute;
-      bottom: 0; left: 0; right: 0;
-      height: 60px;
-      background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.55));
-      pointer-events: none;
-    }
-
-    .video-bottom::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 60px;
-      background: linear-gradient(to top, transparent, rgba(0,0,0,0.55));
-      pointer-events: none;
-      z-index: 1;
-    }
-
-    /* Caller placeholder */
-    .vid-placeholder {
-      background: linear-gradient(145deg, #1a1e2a 0%, #0e1118 100%);
+      inset: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 10px;
-      color: var(--text-muted);
+      color: var(--muted);
+      background: linear-gradient(160deg, #122030, #091018);
+      text-align: center;
+      padding: 20px;
     }
 
-    .vid-placeholder .avatar {
-      width: 72px; height: 72px;
+    .avatar {
+      width: 76px;
+      height: 76px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #2a3a4a, #1a2535);
-      border: 2px solid rgba(255,255,255,0.1);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 28px;
-    }
-
-    .vid-placeholder span { font-size: 13px; opacity: 0.5; }
-
-    /* Self-view tint */
-    .self-placeholder {
-      background: linear-gradient(145deg, #0f1520 0%, #080c12 100%);
-    }
-
-    /* Caller label */
-    .caller-label {
-      position: absolute;
-      top: 48px;
-      left: 0; right: 0;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
       display: flex;
-      flex-direction: column;
       align-items: center;
-      z-index: 5;
-      pointer-events: none;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 700;
+      color: #061119;
     }
 
-    .caller-name {
-      font-size: 16px;
-      font-weight: 500;
-      color: #fff;
-      letter-spacing: 0.01em;
-    }
-
-    .call-duration {
+    .overlay-chip {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       font-size: 12px;
-      color: rgba(255,255,255,0.55);
-      margin-top: 3px;
+      z-index: 2;
     }
 
-    /* ─── Speaking Indicator ─── */
-    .speaking-indicator {
+    .pip {
       position: absolute;
-      top: 52px;
-      right: 18px;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 10px;
-      border-radius: 20px;
-      background: rgba(0,212,255,0.15);
-      border: 1px solid rgba(0,212,255,0.35);
-      backdrop-filter: blur(8px);
-      opacity: 0;
-      transform: scale(0.85);
-      transition: opacity 0.3s ease, transform 0.3s ease;
-      pointer-events: none;
-    }
-
-    .speaking-indicator.visible {
-      opacity: 1;
-      transform: scale(1);
-    }
-
-    .speaking-dots {
-      display: flex;
-      gap: 3px;
-      align-items: center;
-    }
-
-    .speaking-dots span {
-      width: 5px; height: 5px;
-      border-radius: 50%;
-      background: var(--accent-cyan);
-      animation: speakBounce 0.9s ease-in-out infinite;
-    }
-
-    .speaking-dots span:nth-child(2) { animation-delay: 0.15s; }
-    .speaking-dots span:nth-child(3) { animation-delay: 0.3s; }
-
-    @keyframes speakBounce {
-      0%, 100% { transform: scaleY(1); opacity: 0.6; }
-      50% { transform: scaleY(1.9); opacity: 1; }
-    }
-
-    .speaking-label {
-      font-size: 11px;
-      font-weight: 500;
-      color: var(--accent-cyan);
-      white-space: nowrap;
-    }
-
-    /* Glow ring on top video when speaking */
-    .video-top.speaking-active {
-      box-shadow: inset 0 0 0 2.5px rgba(0,212,255,0.5);
-    }
-
-    /* ─── PIP Interpreter Video ─── */
-    .pip-container {
-      position: absolute;
-      /* Centered on the divider line, left-aligned */
-      top: 50%;
-      left: 14px;
-      transform: translateY(-50%);
-      z-index: 20;
-      width: 180px;
-      height: 140px;
-    }
-
-    .pip-frame {
-      width: 100%;
-      height: 100%;
-      border-radius: 14px;
+      left: 16px;
+      top: 96px;
+      width: min(180px, 42vw, calc(100% - 32px));
+      aspect-ratio: 16 / 12.4;
+      border-radius: 16px;
       overflow: hidden;
-      border: 2px solid rgba(0,212,255,0.55);
-      box-shadow:
-        0 0 0 1px rgba(0,0,0,0.4),
-        0 8px 24px rgba(0,0,0,0.6),
-        0 0 20px rgba(0,212,255,0.15);
-      position: relative;
+      border: 2px solid rgba(0, 212, 255, 0.4);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+      z-index: 20;
+      background: #0f1822;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
     }
 
-    .pip-frame video,
-    .pip-frame .pip-placeholder {
+    .pip.dragging {
+      cursor: grabbing;
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.52);
+    }
+
+    .pip video {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      display: none;
     }
 
-    .pip-placeholder {
-      background: linear-gradient(145deg, #0e2030, #0a1520);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-    }
-
-    .pip-placeholder .pip-icon { font-size: 22px; }
-    .pip-placeholder .pip-text {
-      font-size: 9px;
-      color: var(--accent-cyan);
-      opacity: 0.7;
-      letter-spacing: 0.08em;
-      font-weight: 500;
-    }
-
-    .pip-badge {
+    .pip-handle {
       position: absolute;
-      bottom: -8px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,184,148,0.9);
-      color: #fff;
-      font-size: 9px;
-      font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 10px;
-      white-space: nowrap;
-      letter-spacing: 0.05em;
-    }
-
-    /* ─── Self-view Label ─── */
-    .self-label {
-      position: absolute;
-      bottom: 80px;
-      right: 14px;
-      z-index: 5;
+      top: 8px;
+      left: 8px;
+      z-index: 2;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #f2f7ff;
       font-size: 11px;
-      color: rgba(255,255,255,0.45);
-      font-weight: 400;
+      letter-spacing: 0.04em;
       pointer-events: none;
     }
 
-    /* ─── Out of Frame Alert ─── */
-    .oof-alert {
+    .pip-label {
       position: absolute;
-      bottom: 90px;
       left: 50%;
-      transform: translateX(-50%) translateY(10px);
-      z-index: 30;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      opacity: 0;
-      transition: opacity 0.4s ease, transform 0.4s ease;
-      pointer-events: none;
-    }
-
-    .oof-alert.visible {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    .oof-card {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 16px;
-      border-radius: 16px;
-      background: rgba(255, 90, 60, 0.18);
-      border: 1.5px solid rgba(255, 90, 60, 0.5);
-      backdrop-filter: blur(12px);
-      box-shadow: 0 4px 20px rgba(255,60,30,0.2);
-    }
-
-    .oof-icon-wrap {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .oof-icon { font-size: 22px; line-height: 1; }
-
-    .oof-x {
-      position: absolute;
-      top: -3px; right: -4px;
-      width: 12px; height: 12px;
-      background: var(--alert-red);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 8px;
+      bottom: 8px;
+      transform: translateX(-50%);
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(0, 195, 137, 0.9);
       color: #fff;
-      font-weight: 700;
-      line-height: 1;
-      animation: pulseX 1.2s ease-in-out infinite;
-    }
-
-    @keyframes pulseX {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.2); }
-    }
-
-    .oof-text {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-    }
-
-    .oof-title {
-      font-size: 12px;
-      font-weight: 600;
-      color: #ffb3a0;
-    }
-
-    .oof-sub {
       font-size: 10px;
-      color: rgba(255,180,160,0.65);
     }
 
-    /* ─── Subtitle Bar ─── */
-    .subtitle-bar {
-      position: absolute;
-      bottom: 0;
-      left: 0; right: 0;
-      z-index: 25;
-      padding: 0 14px 10px;
-      pointer-events: none;
+    .subtitle {
+      border-top: 1px solid var(--border);
+      background: rgba(5, 8, 12, 0.94);
+      padding: 14px 16px;
     }
 
-    .subtitle-inner {
-      background: rgba(10,12,18,0.78);
-      backdrop-filter: blur(14px);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 14px;
-      padding: 10px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .subtitle-from {
-      font-size: 9px;
-      font-weight: 600;
-      color: var(--accent-cyan);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
+    .subtitle-label {
+      color: var(--accent);
+      font-size: 11px;
+      margin-bottom: 6px;
+      letter-spacing: 0.08em;
     }
 
     .subtitle-text {
-      font-size: 14px;
-      font-weight: 400;
-      color: #f0f4ff;
-      line-height: 1.5;
-      font-family: 'Noto Sans Thai', 'DM Sans', sans-serif;
-    }
-
-    .subtitle-text .highlight {
-      color: var(--accent-cyan);
-      font-weight: 500;
-    }
-
-    /* ─── End Call Button ─── */
-    .endcall-btn {
-      position: absolute;
-      bottom: 72px;
-      right: 18px;
-      z-index: 30;
-      width: 50px; height: 50px;
-      border-radius: 50%;
-      background: var(--alert-red);
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      min-height: 28px;
+      line-height: 1.45;
       font-size: 20px;
-      box-shadow:
-        0 4px 16px rgba(255,71,87,0.5),
-        0 0 0 0 rgba(255,71,87,0.3);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-      animation: endcallPulse 3s ease-in-out infinite;
     }
 
-    @keyframes endcallPulse {
-      0%, 100% { box-shadow: 0 4px 16px rgba(255,71,87,0.5), 0 0 0 0 rgba(255,71,87,0); }
-      50% { box-shadow: 0 4px 24px rgba(255,71,87,0.6), 0 0 0 8px rgba(255,71,87,0); }
+    .controls {
+      padding: 12px;
+      background: #0b1117;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
     }
 
-    .endcall-btn:hover { transform: scale(1.08); }
-    .endcall-btn:active { transform: scale(0.95); }
+    .controls button {
+      min-height: 50px;
+      border: none;
+      border-radius: 14px;
+      background: #141d26;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+    }
 
-    /* ─── Timer overlay ─── */
-    .timer-chip {
+    .controls button.danger {
+      background: rgba(255, 100, 120, 0.16);
+      color: #ff95a3;
+    }
+
+    .signal {
       position: absolute;
-      top: 48px;
-      left: 14px;
-      z-index: 6;
-      font-size: 11px;
-      color: rgba(255,255,255,0.6);
-      background: rgba(0,0,0,0.4);
-      backdrop-filter: blur(6px);
-      padding: 3px 9px;
-      border-radius: 20px;
-      font-variant-numeric: tabular-nums;
-      letter-spacing: 0.05em;
-    }
-
-    /* ─── Info Panel (right side) ─── */
-    .info-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      width: 190px;
-      flex-shrink: 0;
-    }
-
-    .info-panel h2 {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      border-bottom: 1px solid var(--glass-border);
-      padding-bottom: 10px;
-      margin-bottom: 4px;
-    }
-
-    .info-card {
-      padding: 12px 14px;
-      border-radius: 12px;
-      border: 1px solid var(--glass-border);
-      background: var(--glass);
-      backdrop-filter: blur(8px);
-    }
-
-    .info-card .card-title {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 8px;
-    }
-
-    .info-card .card-body {
+      right: 14px;
+      top: calc(50% - 28px);
+      z-index: 4;
+      background: rgba(0, 212, 255, 0.14);
+      border: 1px solid rgba(0, 212, 255, 0.28);
+      color: var(--accent);
+      border-radius: 999px;
+      padding: 8px 12px;
       font-size: 12px;
-      color: var(--text-primary);
-      line-height: 1.6;
-    }
-
-    .tag {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-size: 10px;
-      font-weight: 600;
-      margin: 2px 2px 0 0;
-    }
-
-    .tag-cyan { background: rgba(0,212,255,0.15); color: var(--accent-cyan); }
-    .tag-green { background: rgba(0,184,148,0.15); color: var(--accent-teal); }
-    .tag-red { background: rgba(255,71,87,0.15); color: var(--alert-red); }
-
-    /* ─── Phone divider line ─── */
-    .divider-line {
-      position: absolute;
-      top: 50%;
-      left: 0; right: 0;
-      height: 1px;
-      background: rgba(255,255,255,0.08);
-      z-index: 3;
-      pointer-events: none;
-    }
-
-    /* Responsive */
-    @media (max-width: 900px) {
-      body { flex-direction: column; align-items: center; }
-      .demo-panel, .info-panel { flex-direction: row; flex-wrap: wrap; width: 375px; }
-      .demo-panel h2, .info-panel h2 { width: 100%; }
+      display: none;
     }
   </style>
 </head>
+
 <body>
-
-  <!-- ═══════════════════════════════════════ -->
-  <!--        LEFT: DEMO CONTROL PANEL         -->
-  <!-- ═══════════════════════════════════════ -->
-  <!-- <div class="demo-panel">
-    <h2>🎬 Demo Controls</h2>
-
-    <button class="demo-btn" id="btn-speaking" onclick="toggleSpeaking()">
-      <span class="btn-icon">🔊</span>
-      <div>
-        <div>จำลองคู่สนทนา<br>กำลังพูด</div>
-        <div class="btn-label">Simulate Speaking</div>
+  <div class="frame" id="frame">
+    <div class="header">
+      <div class="title">
+        <h1>signbridge_deaf_ui</h1>
+        <div>คู่สาย: signbridge · <span id="callTime">00:00</span></div>
       </div>
-    </button>
-
-    <button class="demo-btn" id="btn-oof" onclick="toggleOOF()">
-      <span class="btn-icon">🤚</span>
-      <div>
-        <div>จำลองมือ<br>หลุดเฟรม</div>
-        <div class="btn-label">Out of Frame Alert</div>
-      </div>
-    </button>
-
-    <div class="demo-hint">
-      💡 กดปุ่มอีกครั้งเพื่อปิด<br>การแจ้งเตือน
+      <div class="badge" id="statusBadge">กำลังเชื่อมต่อ</div>
     </div>
 
-     Timer demo control -->
-    <!-- <button class="demo-btn" onclick="resetTimer()">
-      <span class="btn-icon">⏱️</span>
-      <div>
-        <div>รีเซ็ตตัวจับเวลา</div>
-        <div class="btn-label">Reset Call Timer</div>
+    <div class="stage">
+      <div class="overlay-chip">คู่สนทนา</div>
+      <video id="remoteVideo" playsinline autoplay muted></video>
+      <div class="placeholder" id="remotePlaceholder">
+        <div class="avatar">SB</div>
+        <div>รอวิดีโอจาก signbridge</div>
       </div>
-    </button>
-  </div> --> 
+    </div>
 
-
-  <!-- ═══════════════════════════════════════ -->
-  <!--          CENTER: PHONE MOCKUP           -->
-  <!-- ═══════════════════════════════════════ -->
-  <div class="phone-wrap">
-    <div class="phone-frame" id="phone">
-
-      <!-- Notch -->
-      <div class="phone-notch"></div>
-
-      <!-- Status bar -->
-      <div class="status-bar">
-        <span id="status-time">9:41</span>
-        <div class="status-right">
-          <span>●●●</span>
-          <span>WiFi</span>
-          <span>🔋</span>
-        </div>
+    <div class="stage">
+      <div class="overlay-chip">คุณ</div>
+      <video id="localVideo" playsinline autoplay muted style="transform: scaleX(-1);"></video>
+      <div class="placeholder" id="localPlaceholder">
+        <div class="avatar">คุณ</div>
+        <div>รอเปิดกล้อง</div>
       </div>
+    </div>
 
-      <!-- ┌─────────────────────────────────┐ -->
-      <!-- │   TOP 50% — CALLER VIDEO        │ -->
-      <!-- └─────────────────────────────────┘ -->
-      <div class="video-top" id="video-top">
-        <img src="./assets/นายสมชาย.png" />
-        <!--
-        ╔══════════════════════════════════════════════════════════╗
-        ║  🎥 REPLACE THIS — CALLER / REMOTE PARTICIPANT VIDEO     ║
-        ║  ภาพวิดีโอของคู่สนทนา (คนหูดี) ที่โทรมา                ║
-        ║                                                          ║
-        ║  Option 1: Video                                         ║
-        ║  <video src="YOUR_CALLER_VIDEO.mp4"                      ║
-        ║    autoplay muted loop playsinline></video>              ║
-        ║                                                          ║
-        ║  Option 2: Image placeholder                             ║
-        ║  <img src="YOUR_CALLER_PHOTO.jpg" />                     ║
-        ╚══════════════════════════════════════════════════════════╝
-        -->
-        <video class="vid-placeholder"
-          src=""
-          autoplay muted loop playsinline
-          onerror="this.style.display='none'; document.getElementById('caller-placeholder').style.display='flex'">
-        </video>
-
-        <!-- Fallback placeholder (shows when no video src) -->
-        <div class="vid-placeholder" id="caller-placeholder" style="display:flex; height:100%;">
-          <div class="avatar">👤</div>
-          <span>Caller Video Feed</span>
-        </div>
-
-        <!-- Caller Info Overlay -->
-        <div class="caller-label">
-          <div class="caller-name">สมชาย ใจดี</div>
-          <div class="call-duration" id="call-timer">00:00</div>
-        </div>
-
-        <!-- Speaking Indicator -->
-        <div class="speaking-indicator" id="speaking-indicator">
-          <div class="speaking-dots">
-            <span></span><span></span><span></span>
-          </div>
-          <span class="speaking-label">กำลังพูด</span>
-        </div>
-
+    <div class="pip" id="interpreterPip">
+      <div class="pip-handle">TSL</div>
+      <video id="interpreterVideo" playsinline autoplay muted></video>
+      <div class="placeholder" id="interpreterPlaceholder">
+        <div class="avatar" style="width:56px;height:56px;font-size:20px;">TSL</div>
+        <div>วิดีโอล่าม</div>
       </div>
-      <!-- END TOP VIDEO -->
+      <!-- <div class="pip-label">ล่ามภาษาไทยมือ</div> -->
+    </div>
 
-      <!-- Divider line at 50% -->
-      <div class="divider-line"></div>
+    <div class="signal" id="incomingSignal">กำลังแปลข้อความ</div>
 
-      <!-- ┌─────────────────────────────────┐ -->
-      <!-- │  BOTTOM 50% — SELF VIEW (Deaf)  │ -->
-      <!-- └─────────────────────────────────┘ -->
-      <div class="video-bottom" id="video-bottom">
+    <div class="subtitle">
+      <div class="subtitle-label">ข้อความจาก signbridge</div>
+      <div class="subtitle-text" id="subtitleText">รอข้อความจากฝั่ง signbridge</div>
+    </div>
 
-        <!--
-        ╔══════════════════════════════════════════════════════════╗
-        ║  🎥 REPLACE THIS — SELF-VIEW / LOCAL CAMERA FEED         ║
-        ║  กล้องหน้าของผู้ใช้ (ผู้บกพร่องทางการได้ยิน)             ║
-        ║  สำหรับแสดงภาษามือใส่กล้อง                               ║
-        ║                                                          ║
-        ║  Option 1: Video                                         ║
-        ║  <video src="YOUR_SELFVIEW_VIDEO.mp4"                    ║
-        ║    autoplay muted loop playsinline></video>              ║
-        ║                                                          ║
-        ║  Option 2: Live camera via getUserMedia (production)     ║
-        ║  ใส่ <video id="localCam" autoplay muted playsinline>    ║
-        ╚══════════════════════════════════════════════════════════╝
-        -->
-        <video id="localCam" autoplay muted playsinline 
-              style="width:100%; height:100%; object-fit:cover; transform: scaleX(-1);">
-        </video>
-
-        <!-- Fallback self-view placeholder -->
-        <div class="vid-placeholder self-placeholder" id="self-placeholder" style="display:flex; height:100%;">
-          <div class="avatar" style="font-size:20px;">🤟</div>
-          <span>Self View (Sign Language)</span>
-        </div>
-
-        <div class="self-label">คุณ</div>
-
-        <!-- Out of Frame Alert -->
-        <div class="oof-alert" id="oof-alert">
-          <div class="oof-card">
-            <div class="oof-icon-wrap">
-              <span class="oof-icon">🤚</span>
-              <div class="oof-x">✕</div>
-            </div>
-            <div class="oof-text">
-              <div class="oof-title">มือหลุดเฟรม</div>
-              <div class="oof-sub">กรุณาขยับมือเข้ากล้อง</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- End Call Button -->
-        <button class="endcall-btn" onclick="endCall()" title="วางสาย">
-          📵
-        </button>
-
-      </div>
-      <!-- END BOTTOM VIDEO -->
-
-      <!-- ┌─────────────────────────────────┐ -->
-      <!-- │  PIP — INTERPRETER VIDEO        │ -->
-      <!-- └─────────────────────────────────┘ -->
-      <div class="pip-container">
-        <div class="pip-frame">
-          <!--
-          ╔══════════════════════════════════════════════════════════╗
-          ║  🎥 REPLACE THIS — INTERPRETER / TSL TRANSLATOR VIDEO    ║
-          ║  วิดีโอล่ามภาษามือ (แปล TSL → เสียง / เสียง → TSL)      ║
-          ║                                                          ║
-          ║  <video src="YOUR_INTERPRETER_VIDEO.mp4"                 ║
-          ║    autoplay muted loop playsinline></video>              ║
-          ╚══════════════════════════════════════════════════════════╝
-          -->
-          <video
-            src=""
-            autoplay muted loop playsinline
-            style="width:100%;height:100%;object-fit:cover;"
-            onerror="this.style.display='none'; document.getElementById('pip-placeholder').style.display='flex'">
-          </video>
-
-          <!-- PIP Fallback placeholder -->
-          <div class="pip-placeholder" id="pip-placeholder" style="display:flex;">
-            <div class="pip-icon">🧏</div>
-            <div class="pip-text">ล่าม TSL</div>
-          </div>
-        </div>
-        <div class="pip-badge">ล่ามภาษามือ</div>
-      </div>
-      <!-- END PIP -->
-
-      <!-- ┌─────────────────────────────────┐ -->
-      <!-- │  SUBTITLE BAR (Bottom)          │ -->
-      <!-- └─────────────────────────────────┘ -->
-      <div class="subtitle-bar">
-        <div class="subtitle-inner">
-          <div class="subtitle-from"></div>
-          <div class="subtitle-text" id="subtitle-text">
-             <span class="highlight"></span> 
-          </div>
-        </div>
-      </div>
-
-    </div><!-- end .phone-frame -->
+    <div class="controls">
+      <button id="cameraBtn">เปิด/ปิดกล้อง</button>
+      <button id="refreshBtn">เชื่อมต่อใหม่</button>
+      <button id="endBtn" class="danger">วางสาย</button>
+    </div>
   </div>
-  <!-- END PHONE -->
 
-
-  <!-- ═══════════════════════════════════════ -->
-  <!--       RIGHT: INFO / LEGEND PANEL        -->
-  <!-- ═══════════════════════════════════════ -->
-  <!-- <div class="info-panel">
-    <h2>📋 UI Elements</h2>
-
-    <div class="info-card">
-      <div class="card-title">Layout</div>
-      <div class="card-body">
-        <span class="tag tag-cyan">Top 50%</span> Caller Video<br>
-        <span class="tag tag-green">Bottom 50%</span> Self View<br>
-        <span class="tag tag-cyan">PIP</span> Interpreter
-      </div>
-    </div>
-
-    <div class="info-card">
-      <div class="card-title">Visual Cues</div>
-      <div class="card-body">
-        <span class="tag tag-cyan">🔵 Blink</span> Speaking<br>
-        <span class="tag tag-red">🤚✕ Fade-in</span> OOF Alert
-      </div>
-    </div>
-
-    <div class="info-card">
-      <div class="card-title">Accessibility</div>
-      <div class="card-body" style="font-size:11px; line-height:1.7; color: var(--text-muted);">
-        ✓ ไม่มีคีย์บอร์ด<br>
-        ✓ Visual-only alerts<br>
-        ✓ High contrast text<br>
-        ✓ Large tap targets<br>
-        ✓ PIP กึ่งกลาง–ซ้าย
-      </div>
-    </div>
-
-    <div class="info-card">
-      <div class="card-title">Replace Media</div>
-      <div class="card-body" style="font-size:11px; line-height:1.7; color: var(--text-muted);">
-        🔍 Search in code:<br>
-        <code style="font-size:10px; color:var(--accent-cyan);">REPLACE THIS</code><br>
-        to find all 3 video slots
-      </div>
-    </div>
-  </div> -->
-
-  <div class="info-card" style="border-color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0,212,255,0.2);">
-      <div class="card-title" style="color: var(--accent-cyan);">📨 แบบจำลองรับข้อความ</div>
-      <div class="card-body" style="display: flex; flex-direction: column; gap: 8px; margin-top: 5px;">
-        <input type="text" id="demo-incoming-input" placeholder="เช่น อาจารย์หล่อมาก..." 
-               style="width: 100%; padding: 8px; border-radius: 6px; background: rgba(0,0,0,0.6); color: white; border: 1px solid var(--glass-border); font-size: 11px; outline: none;">
-        <button onclick="triggerIncomingMessage()" 
-                style="background: var(--accent-cyan); color: #000; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.2s;">
-          ▶ โชว์วิดีโอล่าม TSL
-        </button>
-      </div>
-    </div>
-
-
-  <!-- ═══════════════════════════════════════ -->
-  <!--              JAVASCRIPT                 -->
-  <!-- ═══════════════════════════════════════ -->
   <script>
-    // ── State ──
-    let speakingActive = false;
-    let oofActive = false;
-    let callSeconds = 0;
-    let timerInterval = null;
+    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const SIGNAL_URL = `${wsProtocol}//${window.location.host}/ws`;
+    const API_URL = "/api/sign-to-text";
+    const RTC_CONFIG = {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" }
+      ]
+    };
 
-    // ── Call Timer ──
+    function readTurnConfig() {
+      const query = new URLSearchParams(window.location.search);
+      const queryUrls = query.getAll("turn_url").filter(Boolean);
+      const queryUsername = query.get("turn_username") || "";
+      const queryCredential = query.get("turn_credential") || "";
+
+      if (queryUrls.length && queryUsername && queryCredential) {
+        return { urls: queryUrls, username: queryUsername, credential: queryCredential };
+      }
+
+      try {
+        const raw = window.localStorage.getItem("signbridge_turn_config");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.urls && parsed.username && parsed.credential) {
+            return parsed;
+          }
+        }
+      } catch (error) {
+        console.warn("Unable to parse local TURN config", error);
+      }
+
+      if (
+        window.SIGNBRIDGE_TURN_CONFIG &&
+        window.SIGNBRIDGE_TURN_CONFIG.urls &&
+        window.SIGNBRIDGE_TURN_CONFIG.username &&
+        window.SIGNBRIDGE_TURN_CONFIG.credential
+      ) {
+        return window.SIGNBRIDGE_TURN_CONFIG;
+      }
+
+      return null;
+    }
+
+    const turnConfig = readTurnConfig();
+    if (turnConfig) {
+      RTC_CONFIG.iceServers.push({
+        urls: turnConfig.urls,
+        username: turnConfig.username,
+        credential: turnConfig.credential
+      });
+      console.log("TURN config enabled");
+    } else {
+      console.log("TURN config not set, using STUN only");
+    }
+
+    const ROLE = "signbridge_deaf_ui";
+    const TARGET_ROLE = "signbridge";
+    const CLIENT_ID = `${ROLE}-${Math.random().toString(36).slice(2, 10)}`;
+
+    const remoteVideo = document.getElementById("remoteVideo");
+    const localVideo = document.getElementById("localVideo");
+    const frame = document.getElementById("frame");
+    const interpreterPip = document.getElementById("interpreterPip");
+    const interpreterVideo = document.getElementById("interpreterVideo");
+    const remotePlaceholder = document.getElementById("remotePlaceholder");
+    const localPlaceholder = document.getElementById("localPlaceholder");
+    const interpreterPlaceholder = document.getElementById("interpreterPlaceholder");
+    const subtitleText = document.getElementById("subtitleText");
+    const statusBadge = document.getElementById("statusBadge");
+    const callTime = document.getElementById("callTime");
+    const incomingSignal = document.getElementById("incomingSignal");
+    const cameraBtn = document.getElementById("cameraBtn");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const endBtn = document.getElementById("endBtn");
+
+    const captureCanvas = document.createElement("canvas");
+    const captureContext = captureCanvas.getContext("2d");
+
+    let socket = null;
+    let peerConnection = null;
+    let localStream = null;
+    let remoteStream = null;
+    let pendingCandidates = [];
+    let callSeconds = 0;
+    let timerId = null;
+    let lastPrediction = "";
+    let lastSentPrediction = "";
+    let stablePrediction = "";
+    let stablePredictionCount = 0;
+    let predictionInFlight = false;
+    let interpreterQueueToken = 0;
+    let pipDragState = null;
+    const MIN_CONFIDENCE = 0.6;
+    const STABLE_FRAMES_REQUIRED = 1;
+
+    function clampPipPosition(left, top) {
+      const maxLeft = Math.max(8, frame.clientWidth - interpreterPip.offsetWidth - 8);
+      const maxTop = Math.max(8, frame.clientHeight - interpreterPip.offsetHeight - 8);
+      return {
+        left: Math.min(Math.max(8, left), maxLeft),
+        top: Math.min(Math.max(8, top), maxTop)
+      };
+    }
+
+    function setPipPosition(left, top) {
+      const clamped = clampPipPosition(left, top);
+      interpreterPip.style.left = `${clamped.left}px`;
+      interpreterPip.style.top = `${clamped.top}px`;
+    }
+
+    function initDraggableInterpreterPip() {
+      const onPointerMove = (event) => {
+        if (!pipDragState) return;
+        const nextLeft = event.clientX - pipDragState.frameLeft - pipDragState.offsetX;
+        const nextTop = event.clientY - pipDragState.frameTop - pipDragState.offsetY;
+        setPipPosition(nextLeft, nextTop);
+      };
+
+      const stopDragging = () => {
+        if (!pipDragState) return;
+        interpreterPip.classList.remove("dragging");
+        pipDragState = null;
+      };
+
+      interpreterPip.addEventListener("pointerdown", (event) => {
+        if (event.button !== undefined && event.button !== 0) return;
+        const pipRect = interpreterPip.getBoundingClientRect();
+        const frameRect = frame.getBoundingClientRect();
+        pipDragState = {
+          offsetX: event.clientX - pipRect.left,
+          offsetY: event.clientY - pipRect.top,
+          frameLeft: frameRect.left,
+          frameTop: frameRect.top
+        };
+        interpreterPip.classList.add("dragging");
+        interpreterPip.setPointerCapture(event.pointerId);
+      });
+
+      interpreterPip.addEventListener("pointermove", onPointerMove);
+      interpreterPip.addEventListener("pointerup", (event) => {
+        if (interpreterPip.hasPointerCapture(event.pointerId)) {
+          interpreterPip.releasePointerCapture(event.pointerId);
+        }
+        stopDragging();
+      });
+      interpreterPip.addEventListener("pointercancel", stopDragging);
+      window.addEventListener("resize", () => {
+        setPipPosition(interpreterPip.offsetLeft, interpreterPip.offsetTop);
+      });
+      setPipPosition(16, 96);
+    }
+
+    function setStatus(text, connected = false) {
+      statusBadge.textContent = text;
+      statusBadge.style.color = connected ? "var(--accent)" : "var(--muted)";
+      statusBadge.style.borderColor = connected ? "rgba(0,212,255,0.3)" : "rgba(255,255,255,0.1)";
+    }
+
+    function describeIceState(state) {
+      if (state === "new" || state === "checking") return "กำลังหาเส้นทางวิดีโอ";
+      if (state === "connected" || state === "completed") return "วิดีโอเชื่อมต่อแล้ว";
+      if (state === "disconnected") return "วิดีโอหลุดชั่วคราว";
+      if (state === "failed") return "ต่อวิดีโอไม่ได้ - น่าจะต้องใช้ TURN";
+      if (state === "closed") return "ปิดการเชื่อมต่อวิดีโอ";
+      return `ICE: ${state}`;
+    }
+
     function startTimer() {
-      timerInterval = setInterval(() => {
-        callSeconds++;
-        const m = String(Math.floor(callSeconds / 60)).padStart(2, '0');
-        const s = String(callSeconds % 60).padStart(2, '0');
-        document.getElementById('call-timer').textContent = `${m}:${s}`;
+      clearInterval(timerId);
+      timerId = setInterval(() => {
+        callSeconds += 1;
+        const mm = String(Math.floor(callSeconds / 60)).padStart(2, "0");
+        const ss = String(callSeconds % 60).padStart(2, "0");
+        callTime.textContent = `${mm}:${ss}`;
       }, 1000);
     }
 
-    function resetTimer() {
+    function stopTimer() {
+      clearInterval(timerId);
+      timerId = null;
       callSeconds = 0;
-      document.getElementById('call-timer').textContent = '00:00';
+      callTime.textContent = "00:00";
     }
 
-    // ── Status bar clock ──
-    function updateClock() {
-      const now = new Date();
-      const h = String(now.getHours()).padStart(2, '0');
-      const m = String(now.getMinutes()).padStart(2, '0');
-      document.getElementById('status-time').textContent = `${h}:${m}`;
+    function sendSignal(payload) {
+      if (!socket || socket.readyState !== WebSocket.OPEN) return;
+      socket.send(JSON.stringify({
+        senderId: CLIENT_ID,
+        role: ROLE,
+        targetRole: TARGET_ROLE,
+        ...payload
+      }));
     }
 
-    // ── Speaking Indicator ──
-    function toggleSpeaking() {
-      speakingActive = !speakingActive;
-      const indicator = document.getElementById('speaking-indicator');
-      const videoTop = document.getElementById('video-top');
-      const btn = document.getElementById('btn-speaking');
+    async function createPeerConnection() {
+      if (peerConnection) return peerConnection;
 
-      if (speakingActive) {
-        indicator.classList.add('visible');
-        videoTop.classList.add('speaking-active');
-        btn.classList.add('active-speaking');
-        // Auto cycle subtitle
-        cycleSubtitles();
-      } else {
-        indicator.classList.remove('visible');
-        videoTop.classList.remove('speaking-active');
-        btn.classList.remove('active-speaking');
-        clearInterval(subtitleInterval);
-      }
-    }
+      peerConnection = new RTCPeerConnection(RTC_CONFIG);
+      remoteStream = new MediaStream();
+      remoteVideo.srcObject = remoteStream;
 
-    // ── Subtitle Cycling ──
-    const dummySubtitles = [
-      { from: 'คู่สนทนา', text: 'สวัสดีครับ <span class="highlight">วันนี้มีนัดเวลา 10 โมง</span> ใช่ไหมครับ?' },
-      { from: 'คู่สนทนา', text: 'ขอยืนยัน<span class="highlight">ที่อยู่</span>อีกครั้งได้ไหมครับ?' },
-      { from: 'คู่สนทนา', text: 'ครับ ทราบแล้ว <span class="highlight">ขอบคุณมากครับ</span>' },
-      { from: 'คู่สนทนา', text: 'รบกวน<span class="highlight">ส่งเอกสาร</span>ทางอีเมลด้วยนะครับ' },
-    ];
-    let subIdx = 0;
-    let subtitleInterval = null;
+      peerConnection.ontrack = (event) => {
+        event.streams[0].getTracks().forEach((track) => remoteStream.addTrack(track));
+        remotePlaceholder.style.display = "none";
+        remoteVideo.play().catch(() => { });
+      };
 
-    function cycleSubtitles() {
-      subtitleInterval = setInterval(() => {
-        subIdx = (subIdx + 1) % dummySubtitles.length;
-        const s = dummySubtitles[subIdx];
-        document.getElementById('subtitle-text').innerHTML = s.text;
-      }, 2800);
-    }
-
-    // ── Out of Frame Alert ──
-    function toggleOOF() {
-      oofActive = !oofActive;
-      const alert = document.getElementById('oof-alert');
-      const btn = document.getElementById('btn-oof');
-
-      if (oofActive) {
-        alert.classList.add('visible');
-        btn.classList.add('active-oof');
-        // Auto-dismiss after 5s
-        setTimeout(() => {
-          if (oofActive) toggleOOF();
-        }, 5000);
-      } else {
-        alert.classList.remove('visible');
-        btn.classList.remove('active-oof');
-      }
-    }
-
-    // ── End Call ──
-    function endCall() {
-      const phone = document.getElementById('phone');
-      phone.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-      phone.style.opacity = '0';
-      phone.style.transform = 'scale(0.96)';
-      setTimeout(() => {
-        phone.style.opacity = '1';
-        phone.style.transform = 'scale(1)';
-        // Reset state
-        speakingActive = true; toggleSpeaking(); // ensure off
-        oofActive = true; toggleOOF(); // ensure off
-        resetTimer();
-      }, 500);
-    }
-
-    // ── Init ──
-    updateClock();
-    setInterval(updateClock, 10000);
-    startTimer();
-
-    // ตัวแปรสำหรับกล้อง
-const localVideo = document.getElementById('localCam');
-const captureCanvas = document.createElement('canvas');
-const ctx = captureCanvas.getContext('2d');
-
-// 1. ฟังก์ชันขอเปิดกล้องจริง
-async function startRealCamera() {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } } 
-        });
-        localVideo.srcObject = stream;
-        console.log("✅ เปิดกล้องสำเร็จ");
-    } catch (err) {
-        console.error("❌ ไม่สามารถเปิดกล้องได้:", err);
-        alert("กรุณาอนุญาตการเข้าถึงกล้องเพื่อใช้งานระบบ");
-    }
-}
-
-// 2. ฟังก์ชันจับภาพแล้วส่งไปหา FastAPI
-async function captureAndSendFrame() {
-    if (!localVideo.videoWidth) return; // รอกล้องพร้อมก่อน
-
-    // ตั้งขนาด Canvas ให้เท่ากับวิดีโอ
-    captureCanvas.width = localVideo.videoWidth;
-    captureCanvas.height = localVideo.videoHeight;
-    
-    // วาดภาพจากวิดีโอลง Canvas
-    ctx.drawImage(localVideo, 0, 0, captureCanvas.width, captureCanvas.height);
-    
-    // แปลงภาพเป็น Base64 (คุณภาพ 70% เพื่อลด Bandwidth)
-    const base64Image = captureCanvas.toDataURL('image/jpeg', 0.7);
-
-    try {
-        const response = await fetch("http://localhost:8000/api/sign-to-text", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ image: base64Image })
-        });
-        
-        const data = await response.json();
-        
-        // ถ้าหลังบ้าน (MediaPipe/Random Forest) ทำนายคำศัพท์ได้ ให้มาอัปเดต Subtitle ทันที
-        if (data.prediction && data.prediction !== "") {
-            document.getElementById('subtitle-text').innerHTML = `<span class="highlight">${data.prediction}</span>`;
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          sendSignal({ type: "rtc_ice", candidate: event.candidate });
         }
-    } catch (error) {
-        console.error("API Error:", error);
+      };
+
+      peerConnection.oniceconnectionstatechange = () => {
+        if (!peerConnection) return;
+        const iceState = peerConnection.iceConnectionState;
+        if (iceState === "connected" || iceState === "completed") {
+          setStatus(describeIceState(iceState), true);
+        } else {
+          setStatus(describeIceState(iceState));
+        }
+      };
+
+      peerConnection.onconnectionstatechange = () => {
+        if (!peerConnection) return;
+        const state = peerConnection.connectionState;
+        if (state === "connected") {
+          setStatus("เชื่อมต่อแล้ว", true);
+          startTimer();
+        }
+        if (state === "disconnected" || state === "failed" || state === "closed") {
+          setStatus(state === "failed" ? "ต่อวิดีโอไม่ได้ - น่าจะต้องใช้ TURN" : "สายหลุด");
+          remotePlaceholder.style.display = "flex";
+          stopTimer();
+        }
+      };
+
+      if (localStream) {
+        localStream.getTracks().forEach((track) => peerConnection.addTrack(track, localStream));
+      }
+
+      return peerConnection;
     }
-}
 
-// 3. เริ่มเปิดกล้องเมื่อโหลดหน้าเว็บเสร็จ
-startRealCamera();
+    async function flushPendingCandidates() {
+      if (!peerConnection || !peerConnection.remoteDescription) return;
+      while (pendingCandidates.length) {
+        await peerConnection.addIceCandidate(pendingCandidates.shift());
+      }
+    }
 
-// 4. ตั้งเวลาให้แคปภาพส่งไปหลังบ้านทุกๆ 500 มิลลิวินาที (2 FPS)
-// สามารถปรับตัวเลขให้น้อยลงได้ถ้าระบบคุณรับไหว (เช่น 200 = 5 FPS)
-setInterval(captureAndSendFrame, 500);
-
-
-// ── ระบบจำลอง: รับข้อความและเล่นวิดีโอ PIP ──
-    async function triggerIncomingMessage() {
-      const inputEl = document.getElementById('demo-incoming-input');
-      const text = inputEl.value.trim();
-      if (!text) return;
-
-      // 1. เปลี่ยน Subtitle ทันที
-      document.getElementById('subtitle-text').innerHTML = `<span class="highlight">${text}</span>`;
-      inputEl.value = ''; // เคลียร์ช่องพิมพ์
-
-      // 2. เรียก API แปลข้อความเป็นวิดีโอ
+    async function openLocalMedia() {
       try {
-        const response = await fetch("http://localhost:8000/api/text-to-sign", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: text })
+        if (localStream) {
+          localStream.getTracks().forEach((track) => track.stop());
+        }
+
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }
+        });
+
+        localVideo.srcObject = localStream;
+        localPlaceholder.style.display = "none";
+        localVideo.play().catch(() => { });
+
+        if (peerConnection) {
+          const senders = peerConnection.getSenders();
+          localStream.getTracks().forEach((track) => {
+            const sender = senders.find((item) => item.track && item.track.kind === track.kind);
+            if (sender) sender.replaceTrack(track);
+            else peerConnection.addTrack(track, localStream);
+          });
+        }
+      } catch (error) {
+        console.warn("Could not access camera/mic:", error);
+        localStream = null;
+        setStatus("ไม่มีกล้อง (แต่ดูอีกฝั่งได้)");
+      }
+    }
+
+    async function handleSignal(message) {
+      if (message.senderId === CLIENT_ID) return;
+
+      if (message.type === "hearing_msg") {
+        subtitleText.textContent = message.text;
+        incomingSignal.style.display = message.translation_pending ? "block" : "none";
+        if (message.translation_error) {
+          interpreterPlaceholder.style.display = "flex";
+          interpreterVideo.style.display = "none";
+        }
+        if (Array.isArray(message.video_sequence) && message.video_sequence.length > 0) {
+          playInterpreterQueue(message.video_sequence);
+        }
+        return;
+      }
+
+      if (message.type === "rtc_offer" && message.role === TARGET_ROLE) {
+        const pc = await createPeerConnection();
+        await pc.setRemoteDescription(new RTCSessionDescription(message.sdp));
+        await flushPendingCandidates();
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        sendSignal({ type: "rtc_answer", sdp: answer });
+        return;
+      }
+
+      if (message.type === "rtc_answer" && message.role === TARGET_ROLE && peerConnection) {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(message.sdp));
+        await flushPendingCandidates();
+        return;
+      }
+
+      if (message.type === "rtc_ice" && message.role === TARGET_ROLE) {
+        const candidate = new RTCIceCandidate(message.candidate);
+        if (peerConnection && peerConnection.remoteDescription) {
+          await peerConnection.addIceCandidate(candidate);
+        } else {
+          pendingCandidates.push(candidate);
+        }
+        return;
+      }
+    }
+
+    async function connectSocket() {
+      socket = new WebSocket(SIGNAL_URL);
+
+      socket.addEventListener("open", () => {
+        setStatus("พร้อมรับสาย");
+        sendSignal({ type: "join" });
+      });
+
+      socket.addEventListener("message", async (event) => {
+        try {
+          await handleSignal(JSON.parse(event.data));
+        } catch (error) {
+          console.error("signal error", error);
+        }
+      });
+
+      socket.addEventListener("close", () => {
+        setStatus("signal ปิด");
+      });
+    }
+
+    async function captureAndPredict() {
+      if (predictionInFlight || !localVideo.videoWidth) return;
+
+      captureCanvas.width = localVideo.videoWidth;
+      captureCanvas.height = localVideo.videoHeight;
+      captureContext.drawImage(localVideo, 0, 0, captureCanvas.width, captureCanvas.height);
+      predictionInFlight = true;
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: captureCanvas.toDataURL("image/jpeg", 0.7) })
         });
         const result = await response.json();
-        
-        // 3. นำวิดีโอมาเล่นใน PIP
-        if (result.video_sequence && result.video_sequence.length > 0) {
-            playPipVideoQueue(result.video_sequence);
+        if (result.status === "ok" && result.prediction && Number(result.confidence || 0) >= MIN_CONFIDENCE) {
+          subtitleText.textContent = result.prediction;
+
+          if (result.prediction === stablePrediction) {
+            stablePredictionCount += 1;
+          } else {
+            stablePrediction = result.prediction;
+            stablePredictionCount = 1;
+          }
+
+          if (stablePredictionCount >= STABLE_FRAMES_REQUIRED && stablePrediction !== lastSentPrediction) {
+            lastPrediction = stablePrediction;
+            lastSentPrediction = stablePrediction;
+            sendSignal({
+              type: "deaf_msg",
+              text: stablePrediction,
+              confidence: Number(result.confidence || 0)
+            });
+          }
+        } else if (result.status === "no_hands_detected") {
+          stablePrediction = "";
+          stablePredictionCount = 0;
+          lastSentPrediction = "";
         }
-      } catch (err) {
-        console.error("❌ API Error:", err);
-        alert("ไม่สามารถดึงวิดีโอได้ (เช็กให้แน่ใจว่ารัน uvicorn main:app อยู่)");
+      } catch (error) {
+        console.error(error);
+      } finally {
+        predictionInFlight = false;
       }
     }
 
-    // ── ระบบคิวเล่นวิดีโอสำหรับ PIP ──
-    function playPipVideoQueue(videoUrls) {
-      // ดึง element ของวิดีโอ PIP (ใน pip-frame)
-      const pipVideo = document.querySelector('.pip-frame video');
-      const pipPlaceholder = document.getElementById('pip-placeholder');
-      
-      pipPlaceholder.style.display = 'none';
-      pipVideo.style.display = 'block';
-      
-      // 📍 สำคัญมาก: ปิดการตั้งค่า Loop ของเบราว์เซอร์ เพื่อให้ onended ทำงานได้
-      pipVideo.loop = false; 
-      
-      let currentIdx = 0;
-      
-      // คำสั่งนี้จะทำงานก็ต่อเมื่อวิดีโอ(ที่ไม่ได้ถูก loop ไว้) เล่นจนจบ
-      pipVideo.onended = function() {
-          currentIdx++;
-          // ถ้ายังมีวิดีโอในคิวเหลืออยู่
-          if (currentIdx < videoUrls.length) {
-              pipVideo.src = "http://localhost:8000" + videoUrls[currentIdx];
-              pipVideo.play();
-          } else {
-              // เล่นจบครบทุกคำแล้ว
-              console.log("✅ เล่นคิววิดีโอ PIP จบประโยคแล้ว");
-              // จะให้ภาพค้างไว้ที่คลิปสุดท้าย หรือกลับไปแสดง placeholder ก็ได้
-          }
-      };
-      
-      // เริ่มโหลดและเล่นคลิปแรกสุด
-      pipVideo.src = "http://localhost:8000" + videoUrls[0];
-      pipVideo.play();
-    }
-  </script>
+    function playInterpreterQueue(videoSequence) {
+      const resolvedSequence = videoSequence
+        .filter((item) => typeof item === "string" && item.trim())
+        .map((item) => item.startsWith("http") ? item : new URL(item, window.location.origin).href);
 
+      if (!resolvedSequence.length) {
+        interpreterPlaceholder.style.display = "flex";
+        interpreterVideo.style.display = "none";
+        incomingSignal.style.display = "none";
+        return;
+      }
+
+      const queueToken = ++interpreterQueueToken;
+      interpreterPlaceholder.style.display = "none";
+      interpreterVideo.style.display = "block";
+      incomingSignal.style.display = "block";
+
+      let index = 0;
+      const playCurrent = () => {
+        if (queueToken !== interpreterQueueToken) return;
+        interpreterVideo.src = resolvedSequence[index];
+        interpreterVideo.load();
+        interpreterVideo.play().catch((error) => {
+          console.error("interpreter video play error", error);
+        });
+      };
+
+      interpreterVideo.onended = () => {
+        if (queueToken !== interpreterQueueToken) return;
+        index += 1;
+        if (index < resolvedSequence.length) {
+          playCurrent();
+        } else {
+          incomingSignal.style.display = "none";
+        }
+      };
+
+      interpreterVideo.onerror = () => {
+        if (queueToken !== interpreterQueueToken) return;
+        console.error("interpreter video load error", resolvedSequence[index]);
+        index += 1;
+        if (index < resolvedSequence.length) {
+          playCurrent();
+        } else {
+          interpreterVideo.removeAttribute("src");
+          interpreterVideo.load();
+          interpreterVideo.style.display = "none";
+          interpreterPlaceholder.style.display = "flex";
+          incomingSignal.style.display = "none";
+        }
+      };
+
+      playCurrent();
+    }
+
+    async function reconnectCall() {
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
+      pendingCandidates = [];
+      lastPrediction = "";
+      lastSentPrediction = "";
+      stablePrediction = "";
+      stablePredictionCount = 0;
+      await openLocalMedia();
+      sendSignal({ type: "join" });
+      setStatus("ขอเชื่อมต่อใหม่");
+    }
+
+    function toggleCamera() {
+      if (!localStream) return;
+      const next = !localStream.getVideoTracks()[0].enabled;
+      localStream.getVideoTracks().forEach((track) => track.enabled = next);
+      cameraBtn.textContent = next ? "ปิดกล้อง" : "เปิดกล้อง";
+    }
+
+    function endCall() {
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
+      if (localStream) {
+        localStream.getTracks().forEach((track) => track.stop());
+      }
+      remotePlaceholder.style.display = "flex";
+      localPlaceholder.style.display = "flex";
+      lastPrediction = "";
+      lastSentPrediction = "";
+      stablePrediction = "";
+      stablePredictionCount = 0;
+      setStatus("วางสายแล้ว");
+      stopTimer();
+    }
+
+    cameraBtn.addEventListener("click", toggleCamera);
+    refreshBtn.addEventListener("click", reconnectCall);
+    endBtn.addEventListener("click", endCall);
+
+    (async function init() {
+      try {
+        initDraggableInterpreterPip();
+        await openLocalMedia();
+        await connectSocket();
+        setInterval(captureAndPredict, 1500);
+      } catch (error) {
+        console.error(error);
+        setStatus("ต้องอนุญาตกล้อง");
+      }
+    })();
+  </script>
 </body>
+
 </html>

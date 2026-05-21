@@ -3,4 +3,5 @@ python-dotenv
 opencv-python
 fastapi
 uvicorn
+scikit-learn
 # mediapipe==0.10.14
